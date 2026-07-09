@@ -1,0 +1,6025 @@
+# No external dependencies needed - uses Python standard library only
+
+import os
+import urllib.parse
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+
+PORT = int(os.environ.get('PORT', 8000))
+UPLOAD_DIR = 'images'
+
+class CustomHandler(SimpleHTTPRequestHandler):
+    def do_POST(self):
+        if self.path.startswith('/upload'):
+            parsed_path = urllib.parse.urlparse(self.path)
+            query = urllib.parse.parse_qs(parsed_path.query)
+            
+            filename = query.get('filename', ['upload.jpg'])[0]
+            # secure filename to prevent path traversal
+            filename = os.path.basename(filename)
+            filepath = os.path.join(UPLOAD_DIR, filename)
+
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                file_data = self.rfile.read(content_length)
+                
+                os.makedirs(UPLOAD_DIR, exist_ok=True)
+                with open(filepath, 'wb') as f:
+                    f.write(file_data)
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                
+                response = f'{{"success": true, "path": "./images/{filename}"}}'
+                self.wfile.write(response.encode('utf-8'))
+                return
+
+        self.send_response(400)
+        self.end_headers()
+        self.wfile.write(b'{"success": false}')
+
+if __name__ == '__main__':
+    print(f"Starting server on 0.0.0.0:{PORT}...")
+    httpd = HTTPServer(('0.0.0.0', PORT), CustomHandler)
+    httpd.serve_forever()
+
+/* ==============================
+   SHOP & ADMIN SHARED CSS
+   ============================== */
+
+/* Cart icon in nav */
+.nav-cart-btn {
+  position: relative;
+  background: transparent;
+  border: 1px solid rgba(139,0,0,0.4);
+  color: var(--text-secondary);
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+.nav-cart-btn:hover {
+  border-color: var(--blood-bright);
+  color: var(--blood-bright);
+  background: rgba(139,0,0,0.1);
+}
+
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--blood-bright);
+  color: #fff;
+  font-family: var(--font-accent);
+  font-size: 0.65rem;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  animation: popIn 0.3s var(--ease-fire);
+}
+
+@keyframes popIn {
+  from { transform: scale(0); }
+  to   { transform: scale(1); }
+}
+
+/* Active nav link */
+.nav-link.active {
+  color: var(--blood-bright) !important;
+}
+
+.nav-link.active::after { width: 100% !important; }
+
+/* ==============================
+   SHOP BODY
+   ============================== */
+.shop-body {
+  background: var(--dark);
+  min-height: 100vh;
+}
+
+/* ==============================
+   SHOP HERO BANNER
+   ============================== */
+.shop-hero {
+  position: relative;
+  height: 40vh;
+  min-height: 280px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  margin-top: 70px;
+}
+
+.shop-hero-bg {
+  position: absolute;
+  inset: 0;
+}
+
+.shop-hero-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  filter: brightness(0.3) saturate(1.4);
+}
+
+.shop-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 30%, var(--dark) 100%),
+              linear-gradient(to right, rgba(5,5,8,0.5), transparent);
+}
+
+.shop-hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 3rem;
+  max-width: 1300px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.shop-hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  color: var(--text-primary);
+  line-height: 1;
+  margin: 0.5rem 0;
+}
+
+.shop-hero-sub {
+  font-family: var(--font-title);
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+
+/* ==============================
+   SHOP MAIN
+   ============================== */
+.shop-main {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 3rem;
+  min-height: 60vh;
+}
+
+/* ==============================
+   FILTERS
+   ============================== */
+.shop-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.filter-left {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 0.5rem 1.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-btn:hover, .filter-btn.active {
+  color: var(--text-primary);
+  border-color: var(--blood-bright);
+  background: rgba(139,0,0,0.1);
+}
+
+.sort-select {
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  color: var(--text-secondary);
+  background: var(--dark-3);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  outline: none;
+}
+
+/* ==============================
+   PRODUCTS GRID
+   ============================== */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+/* ==============================
+   PRODUCT CARD
+   ============================== */
+.product-card {
+  background: var(--dark-3);
+  border: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  animation: cardReveal 0.5s ease both;
+}
+
+@keyframes cardReveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.product-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(139,0,0,0.4);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(139,0,0,0.1);
+}
+
+.product-card.featured-card {
+  border-color: rgba(201,168,76,0.25);
+  background: linear-gradient(135deg, var(--dark-3), rgba(201,168,76,0.03));
+}
+
+.product-card.featured-card:hover {
+  border-color: rgba(201,168,76,0.5);
+}
+
+.product-badge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  font-family: var(--font-accent);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  padding: 0.3rem 0.75rem;
+  background: var(--blood);
+  color: #fff;
+  border: 1px solid var(--blood-bright);
+  z-index: 2;
+}
+
+.product-badge.gold { background: rgba(201,168,76,0.2); border-color: var(--gold); color: var(--gold); }
+.product-badge.green { background: rgba(0,180,100,0.2); border-color: #00b464; color: #00d47a; }
+.product-badge.gray { background: rgba(90,90,90,0.4); border-color: #666; color: #999; }
+
+.product-image-wrap {
+  position: relative;
+  aspect-ratio: 3/4;
+  overflow: hidden;
+  background: var(--dark-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transition: transform 0.5s ease;
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.04);
+}
+
+.product-image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+}
+
+.product-image-placeholder span { font-size: 3rem; }
+.product-image-placeholder p { font-family: var(--font-accent); font-size: 0.7rem; letter-spacing: 0.2em; }
+
+.product-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 50%, rgba(5,5,8,0.7) 100%);
+}
+
+.product-quick-view {
+  position: absolute;
+  bottom: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-accent);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--text-primary);
+  background: rgba(139,0,0,0.85);
+  border: 1px solid var(--blood-bright);
+  padding: 0.5rem 1.5rem;
+  cursor: pointer;
+  transition: bottom 0.3s ease;
+  white-space: nowrap;
+  z-index: 3;
+}
+
+.product-card:hover .product-quick-view { bottom: 1rem; }
+
+.product-info {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.product-type-tag {
+  font-family: var(--font-accent);
+  font-size: 0.65rem;
+  letter-spacing: 0.35em;
+  color: var(--blood-bright);
+}
+
+.product-name {
+  font-family: var(--font-title);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.product-volume {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.product-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.product-pricing {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.product-price {
+  font-family: var(--font-accent);
+  font-size: 1.6rem;
+  color: var(--text-primary);
+  letter-spacing: 0.05em;
+}
+
+.product-original-price {
+  font-family: var(--font-accent);
+  font-size: 1rem;
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.product-discount {
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  color: #00d47a;
+  background: rgba(0,180,100,0.1);
+  border: 1px solid rgba(0,180,100,0.2);
+  padding: 0.2rem 0.5rem;
+}
+
+.product-stock-info {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.in-stock { color: #00d47a; }
+.low-stock { color: var(--fire-bright); }
+.out-of-stock { color: var(--text-muted); }
+
+.product-card-actions {
+  display: flex;
+  gap: 0;
+  margin-top: 1rem;
+}
+
+.add-to-cart-btn {
+  flex: 1;
+  font-family: var(--font-accent);
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  color: var(--text-primary);
+  background: var(--blood);
+  border: 1px solid var(--blood-bright);
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.add-to-cart-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--blood-bright), var(--fire));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.add-to-cart-btn:hover::before { opacity: 1; }
+.add-to-cart-btn span { position: relative; z-index: 1; }
+
+.add-to-cart-btn:disabled {
+  background: var(--dark-5);
+  border-color: rgba(255,255,255,0.1);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.add-to-cart-btn:disabled::before { display: none; }
+
+.add-to-cart-btn.added {
+  background: rgba(0,180,100,0.3);
+  border-color: #00d47a;
+}
+
+/* ==============================
+   EMPTY STATE
+   ============================== */
+.empty-state {
+  text-align: center;
+  padding: 6rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.empty-icon { font-size: 4rem; }
+
+.empty-state h3 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--text-primary);
+}
+
+.empty-state p {
+  color: var(--text-secondary);
+  max-width: 400px;
+}
+
+/* ==============================
+   CART SIDEBAR
+   ============================== */
+.cart-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  backdrop-filter: blur(4px);
+}
+
+.cart-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.cart-sidebar {
+  position: fixed;
+  top: 0;
+  right: -420px;
+  width: 420px;
+  max-width: 100vw;
+  height: 100vh;
+  background: var(--dark-2);
+  border-left: 1px solid rgba(139,0,0,0.2);
+  z-index: 1501;
+  display: flex;
+  flex-direction: column;
+  transition: right 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  overflow: hidden;
+}
+
+.cart-sidebar.open { right: 0; }
+
+.cart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+
+.cart-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  letter-spacing: 0.1em;
+}
+
+.cart-close {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-muted);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s;
+}
+
+.cart-close:hover {
+  border-color: var(--blood-bright);
+  color: var(--blood-bright);
+}
+
+.cart-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.cart-items::-webkit-scrollbar { width: 4px; }
+.cart-items::-webkit-scrollbar-track { background: transparent; }
+.cart-items::-webkit-scrollbar-thumb { background: rgba(139,0,0,0.4); border-radius: 2px; }
+
+.cart-item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  animation: fadeIn 0.3s ease;
+}
+
+.cart-item-image {
+  width: 65px;
+  height: 85px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--dark-4);
+}
+
+.cart-item-image-placeholder {
+  width: 65px;
+  height: 85px;
+  background: var(--dark-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.cart-item-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.cart-item-name {
+  font-family: var(--font-title);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.cart-item-type {
+  font-family: var(--font-accent);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: var(--blood-bright);
+}
+
+.cart-item-price {
+  font-family: var(--font-accent);
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.cart-item-qty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.qty-btn {
+  width: 26px;
+  height: 26px;
+  background: var(--dark-4);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.qty-btn:hover {
+  border-color: var(--blood-bright);
+  background: rgba(139,0,0,0.1);
+}
+
+.qty-display {
+  font-family: var(--font-accent);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  min-width: 20px;
+  text-align: center;
+}
+
+.cart-item-remove {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 4px;
+  transition: color 0.2s;
+  align-self: flex-start;
+}
+
+.cart-item-remove:hover { color: var(--blood-bright); }
+
+.cart-footer {
+  padding: 1.5rem 1.75rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cart-subtotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cart-subtotal span:first-child {
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  color: var(--text-muted);
+}
+
+.cart-subtotal span:last-child {
+  font-family: var(--font-accent);
+  font-size: 1.4rem;
+  color: var(--text-primary);
+}
+
+.cart-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.cart-checkout-btn {
+  width: 100%;
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+.cart-continue {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  text-align: center;
+  transition: color 0.3s;
+  padding: 0.25rem;
+}
+
+.cart-continue:hover { color: var(--text-primary); }
+
+.cart-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  padding: 2rem;
+}
+
+.cart-empty-icon { font-size: 3rem; opacity: 0.4; }
+.cart-empty p { font-family: var(--font-title); font-size: 1rem; color: var(--text-secondary); }
+.cart-empty span { font-size: 0.85rem; }
+
+/* ==============================
+   MODALS
+   ============================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  backdrop-filter: blur(8px);
+}
+
+.modal-overlay.open {
+  display: flex;
+  animation: fadeIn 0.3s ease;
+}
+
+.checkout-modal {
+  background: var(--dark-2);
+  border: 1px solid rgba(139,0,0,0.2);
+  max-width: 680px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.4s var(--ease-blood);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.checkout-modal::-webkit-scrollbar { width: 4px; }
+.checkout-modal::-webkit-scrollbar-thumb { background: rgba(139,0,0,0.4); }
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-muted);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s;
+  z-index: 5;
+}
+
+.modal-close:hover { border-color: var(--blood-bright); color: var(--blood-bright); }
+
+.checkout-header {
+  padding: 2rem 2.5rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  text-align: center;
+}
+
+.checkout-logo {
+  font-family: var(--font-accent);
+  font-size: 1.2rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.checkout-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--text-primary);
+}
+
+.checkout-form {
+  padding: 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.form-section { display: flex; flex-direction: column; gap: 1rem; }
+
+.form-section-title {
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.35em;
+  color: var(--blood-bright);
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-family: var(--font-accent);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  background: var(--dark-4);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.75rem 1rem;
+  outline: none;
+  transition: border-color 0.3s;
+  width: 100%;
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  border-color: var(--blood-bright);
+  background: rgba(139,0,0,0.05);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder { color: var(--text-muted); }
+
+.form-group select option { background: var(--dark-3); }
+
+.checkout-order-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  align-items: center;
+}
+
+.summary-item span:last-child {
+  font-family: var(--font-accent);
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.checkout-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-family: var(--font-accent);
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  letter-spacing: 0.15em;
+}
+
+.checkout-total-row span:last-child {
+  font-size: 1.5rem;
+  color: var(--blood-bright);
+}
+
+.checkout-submit-btn {
+  width: 100%;
+  padding: 1.1rem;
+  font-size: 1rem;
+  letter-spacing: 0.25em;
+}
+
+/* SUCCESS MODAL */
+.success-modal {
+  background: var(--dark-2);
+  border: 1px solid rgba(0,180,100,0.3);
+  max-width: 480px;
+  width: 100%;
+  padding: 3.5rem 2.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  animation: slideUp 0.4s var(--ease-blood);
+}
+
+.success-icon { font-size: 3.5rem; }
+
+.success-title {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  color: var(--text-primary);
+}
+
+.success-text { color: var(--text-secondary); line-height: 1.8; }
+
+.success-order-id {
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  color: var(--text-muted);
+  background: var(--dark-4);
+  padding: 0.5rem 1.5rem;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* FORM ERRORS */
+.form-error {
+  font-size: 0.85rem;
+  color: #ff4444;
+  min-height: 1.2em;
+  font-style: italic;
+}
+
+@media (max-width: 700px) {
+  .shop-main { padding: 2rem 1.5rem; }
+  .form-row { grid-template-columns: 1fr; }
+  .cart-sidebar { width: 100%; }
+  .checkout-form { padding: 1.5rem; }
+  .shop-hero-content { padding: 2rem 1.5rem; }
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SHOP — WAR OF BLOOD Manga</title>
+  <meta name="description" content="Buy War of Blood manga volumes. Official store for the epic manga saga of blood, power, and destiny." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="shop.css" />
+</head>
+<body class="shop-body">
+
+  <!-- NAVBAR -->
+  <nav class="navbar scrolled" id="navbar">
+    <div class="nav-container">
+      <div class="nav-logo">
+        <a href="index.html" id="shop-nav-logo">
+          <span class="nav-logo-war">WAR</span>
+          <span class="nav-logo-of"> OF </span>
+          <span class="nav-logo-blood">BLOOD</span>
+        </a>
+      </div>
+      <button class="nav-hamburger" id="nav-hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html" class="nav-link" id="snav-home">HOME</a></li>
+        <li><a href="index.html#story" class="nav-link" id="snav-story">STORY</a></li>
+        <li><a href="index.html#characters" class="nav-link" id="snav-chars">CHARACTERS</a></li>
+        <li><a href="shop.html" class="nav-link active" id="snav-shop">SHOP</a></li>
+        <li><a href="admin.html" class="nav-link" id="snav-admin">ADMIN</a></li>
+      </ul>
+      <button class="nav-cart-btn" id="cart-toggle-btn" aria-label="Cart">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <span class="cart-badge" id="cart-count">0</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- SHOP HERO BANNER -->
+  <div class="shop-hero">
+    <div class="shop-hero-bg">
+      <img src="./images/hoodie_lightning.jpg" alt="Blood Constellation shop" />
+      <div class="shop-hero-overlay"></div>
+    </div>
+    <div class="shop-hero-content">
+      <div class="section-label">OFFICIAL STORE</div>
+      <h1 class="shop-hero-title">The <span class="highlight">Blood</span> Collection</h1>
+      <p class="shop-hero-sub">Own every volume of the saga. Forged in fire. Bound in blood.</p>
+    </div>
+  </div>
+
+  <!-- SHOP MAIN -->
+  <main class="shop-main">
+    <!-- FILTERS -->
+    <div class="shop-filters" id="shop-filters">
+      <div class="filter-left">
+        <button class="filter-btn active" data-filter="all" id="filter-all">ALL</button>
+        <button class="filter-btn" data-filter="volume" id="filter-volumes">VOLUMES</button>
+        <button class="filter-btn" data-filter="bundle" id="filter-bundles">BUNDLES</button>
+        <button class="filter-btn" data-filter="special" id="filter-special">SPECIAL EDITION</button>
+      </div>
+      <div class="filter-right">
+        <select class="sort-select" id="sort-select" aria-label="Sort products">
+          <option value="default">SORT: DEFAULT</option>
+          <option value="price-asc">PRICE: LOW → HIGH</option>
+          <option value="price-desc">PRICE: HIGH → LOW</option>
+          <option value="newest">NEWEST FIRST</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- PRODUCT GRID -->
+    <div class="products-grid" id="products-grid">
+      <!-- Products injected by JS -->
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" id="empty-state" style="display:none">
+      <div class="empty-icon">📖</div>
+      <h3>No products listed yet</h3>
+      <p>The admin hasn't added any manga yet. Check back soon!</p>
+      <a href="admin.html" class="btn-primary" id="empty-admin-link">GO TO ADMIN PANEL</a>
+    </div>
+  </main>
+
+  <!-- CART SIDEBAR -->
+  <div class="cart-overlay" id="cart-overlay"></div>
+  <aside class="cart-sidebar" id="cart-sidebar">
+    <div class="cart-header">
+      <h2 class="cart-title">YOUR CART</h2>
+      <button class="cart-close" id="cart-close-btn" aria-label="Close cart">✕</button>
+    </div>
+    <div class="cart-items" id="cart-items">
+      <!-- Cart items injected by JS -->
+    </div>
+    <div class="cart-footer" id="cart-footer" style="display:none">
+      <div class="cart-subtotal">
+        <span>SUBTOTAL</span>
+        <span id="cart-total">$0.00</span>
+      </div>
+      <p class="cart-note">Shipping calculated at checkout</p>
+      <button class="btn-primary cart-checkout-btn" id="checkout-btn">PROCEED TO CHECKOUT</button>
+      <button class="cart-continue" id="cart-continue-btn">← CONTINUE SHOPPING</button>
+    </div>
+    <div class="cart-empty" id="cart-empty">
+      <div class="cart-empty-icon">🛒</div>
+      <p>Your cart is empty</p>
+      <span>Add some manga to get started!</span>
+    </div>
+  </aside>
+
+  <!-- CHECKOUT MODAL -->
+  <div class="modal-overlay" id="checkout-overlay">
+    <div class="checkout-modal" id="checkout-modal">
+      <button class="modal-close" id="checkout-close-btn" aria-label="Close">✕</button>
+      <div class="checkout-header">
+        <div class="checkout-logo">
+          <span class="nav-logo-war">WAR</span><span class="nav-logo-of"> OF </span><span class="nav-logo-blood">BLOOD</span>
+        </div>
+        <h2 class="checkout-title">Checkout</h2>
+      </div>
+      <form class="checkout-form" id="checkout-form" novalidate>
+        <div class="form-section">
+          <h3 class="form-section-title">Contact Information</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="checkout-name">Full Name *</label>
+              <input type="text" id="checkout-name" placeholder="Kael Bloodmane" required />
+            </div>
+            <div class="form-group">
+              <label for="checkout-email">Email *</label>
+              <input type="email" id="checkout-email" placeholder="warrior@bloodwar.com" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="checkout-phone">Phone Number</label>
+            <input type="tel" id="checkout-phone" placeholder="+1 234 567 8900" />
+          </div>
+        </div>
+        <div class="form-section">
+          <h3 class="form-section-title">Shipping Address</h3>
+          <div class="form-group">
+            <label for="checkout-address">Street Address *</label>
+            <input type="text" id="checkout-address" placeholder="123 Blood War Lane" required />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="checkout-city">City *</label>
+              <input type="text" id="checkout-city" placeholder="Karathos City" required />
+            </div>
+            <div class="form-group">
+              <label for="checkout-zip">ZIP / Postal Code *</label>
+              <input type="text" id="checkout-zip" placeholder="10001" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="checkout-country">Country *</label>
+            <select id="checkout-country" required>
+              <option value="">Select Country</option>
+              <option value="US">United States</option>
+              <option value="UK">United Kingdom</option>
+              <option value="IN">India</option>
+              <option value="JP">Japan</option>
+              <option value="CA">Canada</option>
+              <option value="AU">Australia</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-section">
+          <h3 class="form-section-title">Order Summary</h3>
+          <div class="checkout-order-summary" id="checkout-summary"></div>
+          <div class="checkout-total-row">
+            <span>TOTAL</span>
+            <span id="checkout-total-display">$0.00</span>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary checkout-submit-btn" id="place-order-btn">⚔️ PLACE ORDER</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ORDER SUCCESS MODAL -->
+  <div class="modal-overlay" id="success-overlay">
+    <div class="success-modal" id="success-modal">
+      <div class="success-icon">⚔️</div>
+      <h2 class="success-title">Order Placed!</h2>
+      <p class="success-text">Your manga is on its way, warrior. The blood war saga will arrive at your door soon.</p>
+      <div class="success-order-id" id="success-order-id"></div>
+      <button class="btn-primary" id="success-close-btn">CONTINUE SHOPPING</button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-logo">
+        <span class="nav-logo-war">WAR</span>
+        <span class="nav-logo-of"> OF </span>
+        <span class="nav-logo-blood">BLOOD</span>
+      </div>
+      <p class="footer-tagline">The eternal war has begun.</p>
+      <ul class="footer-links">
+        <li><a href="index.html#story">Story</a></li>
+        <li><a href="index.html#characters">Characters</a></li>
+        <li><a href="shop.html">Shop</a></li>
+        <li><a href="admin.html">Admin</a></li>
+      </ul>
+      <div class="footer-divider"></div>
+      <p class="footer-copy">© 2026 WAR OF BLOOD. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="store.js"></script>
+  <script src="shop.js"></script>
+</body>
+</html>
+
+// Shop display and cart functionality
+(function () {
+  'use strict';
+
+  const productsGrid = document.getElementById('products-grid');
+  const emptyState = document.getElementById('empty-state');
+  const sortSelect = document.getElementById('sort-select');
+  const filterBtns = document.querySelectorAll('.filter-btn');
+
+  // Cart elements
+  const cartToggleBtn = document.getElementById('cart-toggle-btn');
+  const cartCloseBtn = document.getElementById('cart-close-btn');
+  const cartOverlay = document.getElementById('cart-overlay');
+  const cartSidebar = document.getElementById('cart-sidebar');
+  const cartCount = document.getElementById('cart-count');
+  const cartItems = document.getElementById('cart-items');
+  const cartFooter = document.getElementById('cart-footer');
+  const cartEmpty = document.getElementById('cart-empty');
+  const cartTotal = document.getElementById('cart-total');
+  const cartContinueBtn = document.getElementById('cart-continue-btn');
+
+  // Checkout modal
+  const checkoutBtn = document.getElementById('checkout-btn');
+  const checkoutOverlay = document.getElementById('checkout-overlay');
+  const checkoutCloseBtn = document.getElementById('checkout-close-btn');
+  const checkoutForm = document.getElementById('checkout-form');
+  const checkoutSummary = document.getElementById('checkout-summary');
+  const checkoutTotalDisplay = document.getElementById('checkout-total-display');
+
+  // Success modal
+  const successOverlay = document.getElementById('success-overlay');
+  const successCloseBtn = document.getElementById('success-close-btn');
+  const successOrderId = document.getElementById('success-order-id');
+
+  let activeFilter = 'all';
+  let activeSort = 'default';
+  let cart = [];
+
+  // Toggle Cart Sidebar
+  function toggleCart() {
+    cartSidebar.classList.toggle('open');
+    cartOverlay.classList.toggle('open');
+  }
+
+  cartToggleBtn.addEventListener('click', toggleCart);
+  cartCloseBtn.addEventListener('click', toggleCart);
+  cartOverlay.addEventListener('click', toggleCart);
+  cartContinueBtn.addEventListener('click', toggleCart);
+
+  // Filters
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = btn.dataset.filter;
+      renderShop();
+    });
+  });
+
+  // Sort
+  sortSelect.addEventListener('change', () => {
+    activeSort = sortSelect.value;
+    renderShop();
+  });
+
+  // Render products
+  function renderShop() {
+    const products = window.Store.getProducts();
+    let items = [...products];
+
+    // Filter
+    if (activeFilter !== 'all') {
+      items = items.filter(p => p.type === activeFilter);
+    }
+
+    // Sort
+    if (activeSort === 'price-asc') {
+      items.sort((a, b) => a.price - b.price);
+    } else if (activeSort === 'price-desc') {
+      items.sort((a, b) => b.price - a.price);
+    } else if (activeSort === 'newest') {
+      items.reverse();
+    }
+
+    productsGrid.innerHTML = '';
+
+    if (items.length === 0) {
+      emptyState.style.display = 'block';
+      return;
+    }
+    emptyState.style.display = 'none';
+
+    items.forEach(p => {
+      const card = document.createElement('div');
+      card.classList.add('product-card');
+      card.innerHTML = `
+        <div class="product-image-wrap">
+          ${p.badge ? `<span class="product-badge">${p.badge}</span>` : ''}
+          <img src="${p.image || './images/hoodie_lightning.jpg'}" alt="${p.title}" class="product-image" />
+        </div>
+        <div class="product-info">
+          <h3 class="product-title">${p.title}</h3>
+          <div class="product-pricing">
+            <span class="product-price">₹${p.price}</span>
+            ${p.originalPrice ? `<span class="product-original-price">₹${p.originalPrice}</span>` : ''}
+          </div>
+          <p class="product-desc">${p.description}</p>
+          <div class="product-card-actions">
+            <button class="add-to-cart-btn quick-add-btn" data-id="${p.id}">
+              <span>ADD TO CART</span>
+            </button>
+          </div>
+        </div>
+      `;
+      productsGrid.appendChild(card);
+    });
+
+    // Wire add-to-cart buttons
+    document.querySelectorAll('.quick-add-btn').forEach(btn => {
+      btn.addEventListener('click', () => addToCart(btn.dataset.id));
+    });
+  }
+
+  // Cart operations
+  function addToCart(id) {
+    const products = window.Store.getProducts();
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+
+    const existing = cart.find(x => x.id === id);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      cart.push({ ...p, quantity: 1 });
+    }
+
+    updateCartUI();
+    // Open cart sidebar automatically when item added
+    cartSidebar.classList.add('open');
+    cartOverlay.classList.add('open');
+  }
+
+  function updateCartUI() {
+    // Total count
+    const totalCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+    cartCount.textContent = totalCount;
+
+    cartItems.innerHTML = '';
+
+    if (cart.length === 0) {
+      cartEmpty.style.display = 'block';
+      cartFooter.style.display = 'none';
+      return;
+    }
+
+    cartEmpty.style.display = 'none';
+    cartFooter.style.display = 'block';
+
+    let total = 0;
+    cart.forEach(item => {
+      total += item.price * item.quantity;
+      const cartItem = document.createElement('div');
+      cartItem.classList.add('cart-item');
+      cartItem.innerHTML = `
+        <img class="cart-item-thumb" src="${item.image || './images/hoodie_lightning.jpg'}" alt="" />
+        <div class="cart-item-details">
+          <div class="cart-item-title">${item.title}</div>
+          <div class="cart-item-price">₹${item.price}</div>
+          <div class="cart-item-quantity">
+            <button class="qty-btn dec" data-id="${item.id}">-</button>
+            <span>${item.quantity}</span>
+            <button class="qty-btn inc" data-id="${item.id}">+</button>
+          </div>
+        </div>
+        <button class="cart-item-remove" data-id="${item.id}">✕</button>
+      `;
+      cartItems.appendChild(cartItem);
+    });
+
+    cartTotal.textContent = `₹${total.toFixed(2)}`;
+
+    // Quantity triggers
+    document.querySelectorAll('.qty-btn.inc').forEach(btn => {
+      btn.addEventListener('click', () => changeQty(btn.dataset.id, 1));
+    });
+    document.querySelectorAll('.qty-btn.dec').forEach(btn => {
+      btn.addEventListener('click', () => changeQty(btn.dataset.id, -1));
+    });
+    document.querySelectorAll('.cart-item-remove').forEach(btn => {
+      btn.addEventListener('click', () => changeQty(btn.dataset.id, -999));
+    });
+  }
+
+  function changeQty(id, offset) {
+    const item = cart.find(x => x.id === id);
+    if (!item) return;
+    item.quantity += offset;
+    if (item.quantity <= 0) {
+      cart = cart.filter(x => x.id !== id);
+    }
+    updateCartUI();
+  }
+
+  // Checkout handling
+  checkoutBtn.addEventListener('click', () => {
+    // Fill checkout details
+    checkoutSummary.innerHTML = '';
+    let total = 0;
+    cart.forEach(item => {
+      total += item.price * item.quantity;
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.justify = 'space-between';
+      row.style.margin = '4px 0';
+      row.innerHTML = `<span>${item.title} (x${item.quantity})</span><span>₹${(item.price * item.quantity).toFixed(2)}</span>`;
+      checkoutSummary.appendChild(row);
+    });
+    checkoutTotalDisplay.textContent = `₹${total.toFixed(2)}`;
+
+    // Hide cart, show checkout modal
+    cartSidebar.classList.remove('open');
+    cartOverlay.classList.remove('open');
+    checkoutOverlay.classList.add('open');
+  });
+
+  checkoutCloseBtn.addEventListener('click', () => {
+    checkoutOverlay.classList.remove('open');
+  });
+
+  checkoutForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    if (!checkoutForm.checkValidity()) {
+      alert('Please fill out all required fields.');
+      return;
+    }
+
+    const name = document.getElementById('checkout-name').value;
+    const email = document.getElementById('checkout-email').value;
+    const address = document.getElementById('checkout-address').value;
+    const city = document.getElementById('checkout-city').value;
+    const zip = document.getElementById('checkout-zip').value;
+    const country = document.getElementById('checkout-country').value;
+
+    const orderTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+    const newOrder = {
+      id: Math.floor(100000 + Math.random() * 900000),
+      date: new Date().toISOString(),
+      customer: { name, email, address, city, zip, country },
+      items: cart.map(item => ({ id: item.id, title: item.title, price: item.price, quantity: item.quantity })),
+      total: orderTotal.toFixed(2)
+    };
+
+    const orders = window.Store.getOrders();
+    orders.push(newOrder);
+    window.Store.saveOrders(orders);
+
+    // Empty cart
+    cart = [];
+    updateCartUI();
+
+    // Show success
+    checkoutOverlay.classList.remove('open');
+    successOrderId.textContent = `ORDER ID: #${newOrder.id}`;
+    successOverlay.classList.add('open');
+  });
+
+  successCloseBtn.addEventListener('click', () => {
+    successOverlay.classList.remove('open');
+  });
+
+  // Init
+  renderShop();
+  updateCartUI();
+
+  // Sync listener
+  window.addEventListener('bc_products_changed', renderShop);
+})();
+
+// Common store initialization & local storage wrapper
+(function () {
+  'use strict';
+
+  // Seed ONLY the two requested hoodie images, removing the default manga volumes
+  const DEFAULT_PRODUCTS = [
+    {
+      id: "product-lightning",
+      title: "Raiken Lightning Demon Hoodie (Edition A)",
+      type: "special",
+      volume: "Special Edition",
+      price: 1000,
+      originalPrice: 1500,
+      description: "Official Blood Constellation merchandise. Premium heavy-blend white hoodie featuring Lord Raiken, the Lightning Demon.",
+      stock: 50,
+      pages: null,
+      image: "./images/kurai_hoodie.jpeg",
+      badge: "LIMITED",
+      featured: true
+    },
+    {
+      id: "product-raiken",
+      title: "Raiken Storm Guardian Hoodie (Edition B)",
+      type: "special",
+      volume: "Special Edition",
+      price: 1000,
+      originalPrice: 1500,
+      description: "Official Blood Constellation merchandise. Alternative heavy-blend white hoodie featuring detailed back graphics.",
+      stock: 35,
+      pages: null,
+      image: "./images/hoodie_raiken.jpg",
+      badge: "NEW",
+      featured: true
+    }
+  ];
+
+  const DEFAULT_HOME_IMAGES = {
+    intro1: "./images/kurai_hoodie.jpeg",
+    intro2: "./images/hoodie_raiken.jpg",
+    intro3: "./images/kurai_hoodie.jpeg",
+    hero: "./images/kurai_hoodie.jpeg",
+    story1: "./images/kurai_hoodie.jpeg",
+    story2: "./images/hoodie_raiken.jpg",
+    story3: "./images/kurai_hoodie.jpeg",
+    char1: "./images/raiken_lightning.jpg",
+    char2: "./images/hoodie_raiken.jpg",
+    char3: "./images/kurai_blue.png"
+  };
+
+  window.Store = {
+    getProducts: function () {
+      let products = localStorage.getItem('bc_products');
+      if (products) {
+        return JSON.parse(products);
+      }
+      localStorage.setItem('bc_products', JSON.stringify(DEFAULT_PRODUCTS));
+      return DEFAULT_PRODUCTS;
+    },
+    saveProducts: function (products) {
+      localStorage.setItem('bc_products', JSON.stringify(products));
+      // Dispatch custom event to notify other scripts of changes
+      window.dispatchEvent(new Event('bc_products_changed'));
+    },
+    getOrders: function () {
+      let orders = localStorage.getItem('bc_orders');
+      return orders ? JSON.parse(orders) : [];
+    },
+    saveOrders: function (orders) {
+      localStorage.setItem('bc_orders', JSON.stringify(orders));
+      window.dispatchEvent(new Event('bc_orders_changed'));
+    },
+    getHomeImages: function () {
+      let imgs = localStorage.getItem('bc_home_images');
+      return imgs ? JSON.parse(imgs) : DEFAULT_HOME_IMAGES;
+    },
+    saveHomeImages: function (images) {
+      localStorage.setItem('bc_home_images', JSON.stringify(images));
+      window.dispatchEvent(new Event('bc_home_images_changed'));
+    },
+    getHomeGallery: function () {
+      let gallery = localStorage.getItem('bc_home_gallery');
+      return gallery ? JSON.parse(gallery) : [];
+    },
+    saveHomeGallery: function (gallery) {
+      localStorage.setItem('bc_home_gallery', JSON.stringify(gallery));
+      window.dispatchEvent(new Event('bc_home_gallery_changed'));
+    },
+    getContactInfo: function () {
+      let info = localStorage.getItem('bc_contact_info');
+      return info ? JSON.parse(info) : { mobile: '+1 (555) 019-2834' };
+    },
+    saveContactInfo: function (info) {
+      localStorage.setItem('bc_contact_info', JSON.stringify(info));
+      window.dispatchEvent(new Event('bc_contact_info_changed'));
+    }
+  };
+})();
+
+/* ==============================
+   WAR OF BLOOD — CSS
+   ============================== */
+
+:root {
+  --blood: #8B0000;
+  --blood-bright: #CC0000;
+  --blood-glow: #FF2222;
+  --fire: #FF6B00;
+  --fire-bright: #FF9500;
+  --ember: #FFD700;
+  --lightning: #7B5CFF;
+  --lightning-bright: #AA88FF;
+  --dark: #050508;
+  --dark-2: #0D0D15;
+  --dark-3: #12121E;
+  --dark-4: #1A1A2E;
+  --dark-5: #22223A;
+  --text-primary: #F0EEE8;
+  --text-secondary: #A09A8E;
+  --text-muted: #5C5A52;
+  --gold: #C9A84C;
+  --gold-bright: #F0CC6E;
+  --font-display: 'Cinzel Decorative', serif;
+  --font-title: 'Cinzel', serif;
+  --font-accent: 'Bebas Neue', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --ease-blood: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-fire: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--dark);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  cursor: default;
+}
+
+/* ==============================
+   CUSTOM CURSOR
+   ============================== */
+body::after {
+  content: '';
+  position: fixed;
+  width: 12px;
+  height: 12px;
+  background: var(--blood-bright);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99999;
+  transform: translate(-50%, -50%);
+  transition: transform 0.1s;
+  mix-blend-mode: screen;
+  top: var(--cy, -100px);
+  left: var(--cx, -100px);
+}
+
+/* ==============================
+   INTRO SPLASH
+   ============================== */
+.intro-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.intro-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(139,0,0,0.15) 50%, rgba(0,0,0,0.9) 100%);
+  z-index: 2;
+}
+
+.intro-slides {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.intro-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+
+.intro-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transform: scale(1.08);
+  transition: transform 4s ease;
+  filter: brightness(0.55) saturate(1.4);
+}
+
+.intro-slide.active {
+  opacity: 1;
+}
+
+.intro-slide.active img {
+  transform: scale(1.0);
+}
+
+.slide-caption {
+  position: absolute;
+  bottom: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 3;
+  opacity: 0;
+  animation: slideCaption 1s ease 0.8s forwards;
+}
+
+@keyframes slideCaption {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.slide-number {
+  font-family: var(--font-accent);
+  font-size: clamp(3rem, 8vw, 7rem);
+  color: rgba(139,0,0,0.3);
+  display: block;
+  line-height: 1;
+  letter-spacing: 0.2em;
+}
+
+.slide-caption p {
+  font-family: var(--font-title);
+  font-size: clamp(0.75rem, 2vw, 1.1rem);
+  letter-spacing: 0.4em;
+  color: rgba(240,238,232,0.6);
+  text-transform: uppercase;
+}
+
+.intro-logo {
+  position: relative;
+  z-index: 5;
+  text-align: center;
+  pointer-events: none;
+}
+
+.blood-drip-container {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.blood-drip {
+  width: 3px;
+  background: linear-gradient(to bottom, var(--blood-bright), transparent);
+  border-radius: 0 0 2px 2px;
+  animation: drip var(--dur, 1.5s) ease var(--delay, 0s) forwards;
+  opacity: 0;
+}
+
+@keyframes drip {
+  0% { height: 0; opacity: 0; transform: translateY(0); }
+  10% { opacity: 1; }
+  70% { height: var(--h, 40px); opacity: 1; }
+  100% { height: var(--h, 40px); opacity: 0.6; transform: translateY(2px); }
+}
+
+.intro-title {
+  font-family: var(--font-display);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  line-height: 0.9;
+  user-select: none;
+}
+
+.war-text {
+  font-size: clamp(4rem, 14vw, 11rem);
+  color: var(--text-primary);
+  letter-spacing: 0.15em;
+  text-shadow:
+    0 0 60px rgba(139,0,0,0.8),
+    0 0 120px rgba(139,0,0,0.4),
+    2px 2px 0 rgba(0,0,0,0.8);
+  opacity: 0;
+  transform: translateY(-30px);
+  animation: fadeSlideDown 1s var(--ease-blood) 0.3s forwards;
+}
+
+.of-text {
+  font-size: clamp(1.2rem, 3vw, 2.5rem);
+  color: var(--gold);
+  letter-spacing: 0.8em;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: fadeSlideDown 1s var(--ease-blood) 0.7s forwards;
+  margin: 0.1em 0;
+}
+
+.blood-text {
+  font-size: clamp(4rem, 14vw, 11rem);
+  background: linear-gradient(135deg, var(--blood-bright) 0%, var(--blood) 40%, var(--fire) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 0.12em;
+  text-shadow: none;
+  filter: drop-shadow(0 0 30px var(--blood));
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeSlideUp 1s var(--ease-blood) 1s forwards;
+}
+
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 1; transform: translateY(30px); filter: drop-shadow(0 0 30px var(--blood)); }
+  to { opacity: 1; transform: translateY(0); filter: drop-shadow(0 0 30px var(--blood)); }
+}
+
+.intro-tagline {
+  font-family: var(--font-title);
+  font-size: clamp(0.65rem, 1.5vw, 0.9rem);
+  letter-spacing: 0.5em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-top: 1.5rem;
+  opacity: 0;
+  animation: fadeIn 1s ease 1.8s forwards;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+.skip-btn {
+  position: absolute;
+  bottom: 3rem;
+  right: 3rem;
+  z-index: 10;
+  background: transparent;
+  border: 1px solid rgba(139,0,0,0.5);
+  color: var(--text-secondary);
+  font-family: var(--font-accent);
+  font-size: 0.85rem;
+  letter-spacing: 0.25em;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0;
+  animation: fadeIn 1s ease 2.2s forwards;
+}
+
+.skip-btn:hover {
+  border-color: var(--blood-bright);
+  color: var(--blood-bright);
+  background: rgba(139,0,0,0.1);
+}
+
+.skip-btn span { margin-left: 0.5rem; }
+
+.intro-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.05);
+  z-index: 10;
+}
+
+.intro-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(to right, var(--blood), var(--fire));
+  transition: width 0.1s linear;
+}
+
+/* ==============================
+   MAIN SITE
+   ============================== */
+.main-site {
+  opacity: 1;
+  transition: opacity 0.8s ease;
+}
+
+.main-site.hidden {
+  display: none;
+  opacity: 0;
+}
+
+/* ==============================
+   NAVBAR
+   ============================== */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 1.5rem 3rem;
+  transition: all 0.4s ease;
+  background: transparent;
+}
+
+.navbar.scrolled {
+  padding: 1rem 3rem;
+  background: rgba(5,5,8,0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(139,0,0,0.2);
+}
+
+.nav-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo a {
+  font-family: var(--font-accent);
+  font-size: 1.6rem;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  display: flex;
+  gap: 0.2em;
+}
+
+.nav-logo-war { color: var(--text-primary); }
+.nav-logo-of  { color: var(--gold); }
+.nav-logo-blood { color: var(--blood-bright); }
+
+.nav-links {
+  display: flex;
+  list-style: none;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.nav-link {
+  font-family: var(--font-accent);
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  color: var(--text-secondary);
+  text-decoration: none;
+  position: relative;
+  transition: color 0.3s;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--blood-bright);
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover { color: var(--text-primary); }
+.nav-link:hover::after { width: 100%; }
+
+.nav-link-cta {
+  background: var(--blood);
+  color: var(--text-primary) !important;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--blood-bright);
+  letter-spacing: 0.15em;
+}
+
+.nav-link-cta:hover {
+  background: var(--blood-bright) !important;
+}
+
+.nav-link-cta::after { display: none; }
+
+.nav-hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.nav-hamburger span {
+  display: block;
+  width: 25px;
+  height: 2px;
+  background: var(--text-primary);
+  transition: all 0.3s;
+}
+
+@media (max-width: 900px) {
+  .navbar { padding: 1.2rem 1.5rem; }
+  .nav-hamburger { display: flex; }
+  .nav-links {
+    position: fixed;
+    top: 0; right: -100%;
+    width: 280px;
+    height: 100vh;
+    background: var(--dark-2);
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2.5rem;
+    transition: right 0.4s ease;
+    border-left: 1px solid rgba(139,0,0,0.3);
+  }
+  .nav-links.open { right: 0; }
+  .nav-link { font-size: 1.2rem; }
+}
+
+/* ==============================
+   HERO
+   ============================== */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 700px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.hero-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transform: scale(1.05);
+  filter: brightness(0.35) saturate(1.3);
+}
+
+.hero-image-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.hero-gradient-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center top, rgba(139,0,0,0.25) 0%, transparent 60%),
+    linear-gradient(to bottom, rgba(5,5,8,0.4) 0%, transparent 30%, transparent 60%, rgba(5,5,8,1) 100%),
+    linear-gradient(to right, rgba(5,5,8,0.7) 0%, transparent 50%, rgba(5,5,8,0.7) 100%);
+}
+
+.hero-particle-field {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 900px;
+  padding: 0 2rem;
+}
+
+.hero-eyebrow {
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.5em;
+  color: var(--gold);
+  margin-bottom: 1.5rem;
+  opacity: 0;
+  animation: fadeSlideDown 0.8s ease 0.3s forwards;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  display: flex;
+  flex-direction: column;
+  line-height: 0.88;
+  margin-bottom: 2rem;
+}
+
+.hero-war {
+  font-size: clamp(5rem, 16vw, 13rem);
+  color: var(--text-primary);
+  text-shadow:
+    0 0 80px rgba(139,0,0,0.6),
+    0 0 200px rgba(139,0,0,0.2);
+  opacity: 0;
+  transform: translateX(-50px);
+  animation: slideRight 1s var(--ease-blood) 0.5s forwards;
+  letter-spacing: 0.1em;
+}
+
+.hero-of {
+  font-family: var(--font-accent);
+  font-size: clamp(1.2rem, 3vw, 2.2rem);
+  color: var(--gold);
+  letter-spacing: 1em;
+  opacity: 0;
+  animation: fadeIn 1s ease 0.9s forwards;
+  margin: 0.1em 0;
+}
+
+.hero-blood {
+  font-size: clamp(5rem, 16vw, 13rem);
+  background: linear-gradient(135deg, #FF2222 0%, #8B0000 50%, #FF6B00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 40px rgba(139,0,0,0.8));
+  opacity: 0;
+  transform: translateX(50px);
+  animation: slideLeft 1s var(--ease-blood) 0.7s forwards;
+  letter-spacing: 0.08em;
+}
+
+@keyframes slideRight {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideLeft {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.hero-subtitle {
+  font-family: var(--font-title);
+  font-size: clamp(0.85rem, 2vw, 1.15rem);
+  color: var(--text-secondary);
+  letter-spacing: 0.1em;
+  margin-bottom: 3rem;
+  opacity: 0;
+  animation: fadeIn 1s ease 1.2s forwards;
+}
+
+.hero-cta-group {
+  display: flex;
+  gap: 1.25rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  opacity: 0;
+  animation: fadeIn 1s ease 1.5s forwards;
+}
+
+.btn-primary {
+  font-family: var(--font-accent);
+  font-size: 0.9rem;
+  letter-spacing: 0.2em;
+  color: var(--text-primary);
+  background: var(--blood);
+  border: 1px solid var(--blood-bright);
+  padding: 1rem 2.5rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--blood-bright), var(--fire));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.btn-primary:hover::before { opacity: 1; }
+.btn-primary span, .btn-primary { z-index: 1; }
+.btn-primary:hover {
+  box-shadow: 0 0 30px rgba(139,0,0,0.6), 0 0 60px rgba(139,0,0,0.2);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  font-family: var(--font-accent);
+  font-size: 0.9rem;
+  letter-spacing: 0.2em;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid rgba(160,154,142,0.3);
+  padding: 1rem 2.5rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.btn-secondary:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+  transform: translateY(-2px);
+}
+
+.btn-outline {
+  font-family: var(--font-accent);
+  font-size: 0.9rem;
+  letter-spacing: 0.2em;
+  color: var(--text-primary);
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 1rem 2.5rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.btn-outline:hover {
+  border-color: var(--text-primary);
+  background: rgba(255,255,255,0.05);
+  transform: translateY(-2px);
+}
+
+.hero-scroll-hint {
+  position: absolute;
+  bottom: -6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+  animation: fadeIn 1s ease 2.5s forwards;
+}
+
+.scroll-line {
+  width: 1px;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, var(--blood-bright), transparent);
+  animation: scrollPulse 2s ease infinite;
+}
+
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.hero-scroll-hint span {
+  font-family: var(--font-accent);
+  font-size: 0.65rem;
+  letter-spacing: 0.4em;
+  color: var(--text-muted);
+}
+
+.hero-side-text {
+  position: absolute;
+  right: 2rem;
+  top: 50%;
+  transform: translateY(-50%) rotate(90deg);
+  font-family: var(--font-accent);
+  font-size: 0.65rem;
+  letter-spacing: 0.4em;
+  color: var(--text-muted);
+  z-index: 2;
+  white-space: nowrap;
+}
+
+/* ==============================
+   MARQUEE
+   ============================== */
+.marquee-strip {
+  background: var(--blood);
+  overflow: hidden;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(255,0,0,0.2);
+  border-bottom: 1px solid rgba(255,0,0,0.2);
+}
+
+.marquee-track {
+  display: flex;
+  gap: 2rem;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+  align-items: center;
+}
+
+.marquee-track span {
+  font-family: var(--font-accent);
+  font-size: 0.85rem;
+  letter-spacing: 0.3em;
+  color: rgba(255,255,255,0.85);
+  white-space: nowrap;
+}
+
+.marquee-track .dot {
+  color: rgba(255,255,255,0.4);
+  font-size: 0.6rem;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* ==============================
+   SECTION COMMONS
+   ============================== */
+.section-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 7rem 3rem;
+}
+
+.section-label {
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.5em;
+  color: var(--blood-bright);
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  line-height: 1;
+  color: var(--text-primary);
+  margin-bottom: 5rem;
+}
+
+.highlight {
+  background: linear-gradient(135deg, var(--blood-bright) 0%, var(--fire) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 20px rgba(139,0,0,0.5));
+}
+
+/* ==============================
+   STORY SECTION
+   ============================== */
+.story-section {
+  background: var(--dark-2);
+  position: relative;
+}
+
+.story-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(139,0,0,0.5), transparent);
+}
+
+.story-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 7rem;
+}
+
+.story-block {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.story-block.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.story-block.reverse {
+  direction: rtl;
+}
+
+.story-block.reverse > * {
+  direction: ltr;
+}
+
+.story-image-wrap {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 3/4;
+}
+
+.story-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transition: transform 0.8s ease;
+  filter: saturate(1.2);
+}
+
+.story-image-wrap:hover .story-img {
+  transform: scale(1.05);
+}
+
+.story-image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 60%, rgba(5,5,8,0.8) 100%);
+}
+
+.story-image-number {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  font-family: var(--font-accent);
+  font-size: 5rem;
+  color: rgba(139,0,0,0.2);
+  line-height: 1;
+}
+
+.story-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.story-chapter {
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.5em;
+  color: var(--blood-bright);
+}
+
+.story-heading {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.story-body {
+  font-size: 1rem;
+  line-height: 1.9;
+  color: var(--text-secondary);
+}
+
+.story-quote {
+  font-family: var(--font-title);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--gold);
+  border-left: 2px solid var(--blood);
+  padding-left: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .story-block {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+  .story-block.reverse { direction: ltr; }
+}
+
+/* ==============================
+   CHARACTERS
+   ============================== */
+.characters-section {
+  position: relative;
+  background: var(--dark);
+  overflow: hidden;
+}
+
+.char-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(139,0,0,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 50%, rgba(123,92,255,0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.characters-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.char-card {
+  background: var(--dark-3);
+  border: 1px solid rgba(255,255,255,0.05);
+  overflow: hidden;
+  transition: transform 0.4s ease, border-color 0.4s ease;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease, transform 0.7s ease, border-color 0.3s ease;
+}
+
+.char-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.char-card:hover {
+  border-color: rgba(139,0,0,0.4);
+  transform: translateY(-8px);
+}
+
+.char-card.featured {
+  border-color: rgba(139,0,0,0.3);
+  position: relative;
+}
+
+.char-card.featured::before {
+  content: 'ANTAGONIST';
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-accent);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  color: var(--blood-bright);
+  background: rgba(139,0,0,0.2);
+  padding: 0.3rem 1rem;
+  border: 1px solid rgba(139,0,0,0.3);
+  z-index: 5;
+  white-space: nowrap;
+}
+
+.char-image-wrap {
+  position: relative;
+  aspect-ratio: 3/4;
+  overflow: hidden;
+}
+
+.char-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transition: transform 0.6s ease;
+  filter: saturate(1.1);
+}
+
+.char-card:hover .char-img {
+  transform: scale(1.05);
+}
+
+.char-img-fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 40%, var(--dark-3) 100%);
+}
+
+.char-power-badge {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  font-family: var(--font-accent);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  padding: 0.3rem 0.75rem;
+}
+
+.char-power-badge.lightning {
+  background: rgba(123,92,255,0.2);
+  border: 1px solid rgba(123,92,255,0.4);
+  color: var(--lightning-bright);
+}
+
+.char-power-badge.fire {
+  background: rgba(255,107,0,0.2);
+  border: 1px solid rgba(255,107,0,0.4);
+  color: var(--fire-bright);
+}
+
+.char-power-badge.demon {
+  background: rgba(139,0,0,0.3);
+  border: 1px solid rgba(139,0,0,0.5);
+  color: var(--blood-bright);
+}
+
+.char-info {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.char-role {
+  font-family: var(--font-accent);
+  font-size: 0.65rem;
+  letter-spacing: 0.4em;
+  color: var(--text-muted);
+}
+
+.char-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.char-desc {
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+.char-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stat-label {
+  font-family: var(--font-accent);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.stat-bar {
+  flex: 1;
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.stat-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(to right, var(--lightning), var(--lightning-bright));
+  border-radius: 2px;
+  transition: width 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.stat-fill.fire-fill {
+  background: linear-gradient(to right, var(--blood), var(--fire-bright));
+}
+
+.stat-fill.demon-fill {
+  background: linear-gradient(to right, var(--blood), var(--blood-glow));
+}
+
+.stat-fill.animated {
+  width: var(--fill);
+}
+
+@media (max-width: 900px) {
+  .characters-grid {
+    grid-template-columns: 1fr;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+}
+
+/* ==============================
+   GALLERY
+   ============================== */
+.gallery-section {
+  background: var(--dark-2);
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 1.5rem;
+}
+
+.gallery-item {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.gallery-item.large {
+  grid-row: 1 / 3;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transition: transform 0.6s ease, filter 0.6s ease;
+  filter: saturate(1.1) brightness(0.85);
+  min-height: 250px;
+}
+
+.gallery-item:hover img {
+  transform: scale(1.05);
+  filter: saturate(1.3) brightness(1);
+}
+
+.gallery-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+  display: flex;
+  align-items: flex-end;
+  padding: 1.5rem;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.gallery-item:hover .gallery-overlay { opacity: 1; }
+
+.gallery-label {
+  font-family: var(--font-accent);
+  font-size: 0.8rem;
+  letter-spacing: 0.3em;
+  color: var(--text-primary);
+}
+
+@media (max-width: 700px) {
+  .gallery-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+  .gallery-item.large { grid-row: auto; }
+}
+
+/* ==============================
+   NEWS
+   ============================== */
+.news-section {
+  background: var(--dark);
+}
+
+.news-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 2rem;
+}
+
+.news-card {
+  background: var(--dark-3);
+  border: 1px solid rgba(255,255,255,0.05);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+
+.news-card:hover {
+  border-color: rgba(139,0,0,0.4);
+  transform: translateY(-4px);
+}
+
+.news-card.featured-news {
+  border-color: rgba(139,0,0,0.2);
+  background: linear-gradient(135deg, var(--dark-3), rgba(139,0,0,0.05));
+}
+
+.news-tag {
+  font-family: var(--font-accent);
+  font-size: 0.65rem;
+  letter-spacing: 0.4em;
+  color: var(--blood-bright);
+  display: inline-block;
+}
+
+.news-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.news-title {
+  font-family: var(--font-title);
+  font-size: clamp(1rem, 2vw, 1.4rem);
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.news-excerpt {
+  font-size: 0.875rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.news-link {
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: var(--blood-bright);
+  text-decoration: none;
+  transition: color 0.3s;
+  margin-top: auto;
+}
+
+.news-link:hover { color: var(--fire); }
+
+@media (max-width: 900px) {
+  .news-grid { grid-template-columns: 1fr; }
+}
+
+/* ==============================
+   BANNER CTA
+   ============================== */
+.banner-cta {
+  position: relative;
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.banner-bg {
+  position: absolute;
+  inset: 0;
+}
+
+.banner-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: brightness(0.25) saturate(1.5);
+}
+
+.banner-gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, rgba(139,0,0,0.3) 0%, rgba(5,5,8,0.95) 70%),
+    linear-gradient(to bottom, rgba(5,5,8,1) 0%, transparent 20%, transparent 80%, rgba(5,5,8,1) 100%);
+}
+
+.banner-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 800px;
+  padding: 5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.banner-eyebrow {
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.5em;
+  color: var(--blood-bright);
+}
+
+.banner-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+
+.banner-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  max-width: 500px;
+  line-height: 1.8;
+}
+
+.banner-cta-group {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.social-links {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.social-link {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+}
+
+.social-link:hover {
+  border-color: var(--blood-bright);
+  color: var(--blood-bright);
+  background: rgba(139,0,0,0.1);
+}
+
+/* ==============================
+   FOOTER
+   ============================== */
+.footer {
+  background: var(--dark-2);
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.footer-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 4rem 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.footer-logo {
+  font-family: var(--font-accent);
+  font-size: 2rem;
+  letter-spacing: 0.15em;
+}
+
+.footer-tagline {
+  font-family: var(--font-title);
+  font-style: italic;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+}
+
+.footer-links {
+  display: flex;
+  list-style: none;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.footer-links a {
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.footer-links a:hover { color: var(--blood-bright); }
+
+.footer-divider {
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(139,0,0,0.5), transparent);
+}
+
+.footer-copy {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.8;
+  max-width: 600px;
+}
+
+/* ==============================
+   PARTICLES
+   ============================== */
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: particleFloat var(--dur, 8s) ease-in-out var(--delay, 0s) infinite;
+}
+
+@keyframes particleFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: var(--op, 0.5); }
+  33% { transform: translate(var(--tx, 20px), var(--ty, -30px)) scale(1.2); }
+  66% { transform: translate(var(--tx2, -10px), var(--ty2, -60px)) scale(0.8); opacity: 0; }
+}
+
+/* ==============================
+   SCROLL REVEAL
+   ============================== */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ==============================
+   SECTION PADDING MOBILE
+   ============================== */
+@media (max-width: 700px) {
+  .section-container { padding: 5rem 1.5rem; }
+  .hero-side-text { display: none; }
+  .skip-btn { bottom: 2rem; right: 1.5rem; }
+  .banner-content { padding: 4rem 1.5rem; }
+  .footer-container { padding: 3rem 1.5rem; }
+  .footer-links { gap: 1.5rem; }
+}
+
+from pyngrok import ngrok
+import time
+
+# Start ngrok tunnel on port 8000
+public_url = ngrok.connect(8000)
+print(f"\n{'='*60}")
+print(f"  YOUR PUBLIC LINK:")
+print(f"  {public_url.public_url}")
+print(f"{'='*60}")
+print(f"\nShare this link with anyone to view your website!")
+print(f"Keep this terminal open to keep the link active.\n")
+
+try:
+    while True:
+        time.sleep(1)
+except KeyboardInterrupt:
+    ngrok.disconnect(public_url.public_url)
+    print("Tunnel closed.")
+
+import re
+
+def main():
+    try:
+        with open('admin.html', 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Find the Home Page Settings section
+        start_idx = content.find('id="admin-home-settings-panel"')
+        if start_idx == -1:
+            print("Settings panel not found")
+            return
+            
+        end_idx = content.find('<!-- PRODUCT LIST -->', start_idx)
+        if end_idx == -1:
+            end_idx = len(content)
+
+        pre = content[:start_idx]
+        post = content[end_idx:]
+        panel = content[start_idx:end_idx]
+
+        # Replace text inputs with drop zones
+        def replacer(match):
+            id_val = match.group(1)
+            return f'''<div class="drop-zone" id="dz-{id_val}" data-target="{id_val}">
+                  <img src="" class="preview-img" id="preview-{id_val}" />
+                  <span class="drop-text">Drag & Drop or Click</span>
+                  <input type="file" id="file-{id_val}" accept="image/*" />
+                  <input type="hidden" id="{id_val}" />
+                </div>'''
+
+        panel = re.sub(
+            r'<input type="text" id="(home-[^"]+)" placeholder="[^"]*" />',
+            replacer,
+            panel
+        )
+
+        with open('admin.html', 'w', encoding='utf-8') as f:
+            f.write(pre + panel + post)
+
+        print("Updated admin.html")
+    except Exception as e:
+        print(f"Error: {e}")
+
+if __name__ == '__main__':
+    main()
+
+import re
+
+def main():
+    try:
+        with open('admin.js', 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        js_append = """
+  /* ----------------------------------------------------------
+     DRAG AND DROP UPLOADS
+  ---------------------------------------------------------- */
+  const dropZones = document.querySelectorAll('.drop-zone');
+  
+  dropZones.forEach(zone => {
+    const fileInput = zone.querySelector('input[type="file"]');
+    const hiddenInput = zone.querySelector('input[type="hidden"]');
+    const previewImg = zone.querySelector('.preview-img');
+    const dropText = zone.querySelector('.drop-text');
+
+    // Click to upload
+    zone.addEventListener('click', () => fileInput.click());
+
+    // Drag events
+    zone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      zone.classList.add('drag-over');
+    });
+    zone.addEventListener('dragleave', () => {
+      zone.classList.remove('drag-over');
+    });
+    zone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleUpload(e.dataTransfer.files[0], zone, hiddenInput, previewImg, dropText);
+      }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        handleUpload(e.target.files[0], zone, hiddenInput, previewImg, dropText);
+      }
+    });
+  });
+
+  async function handleUpload(file, zone, hiddenInput, previewImg, dropText) {
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file.');
+      return;
+    }
+
+    dropText.textContent = 'Uploading...';
+    
+    try {
+      const res = await fetch('/upload?filename=' + encodeURIComponent(file.name), {
+        method: 'POST',
+        body: file
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        hiddenInput.value = data.path;
+        previewImg.src = data.path;
+        previewImg.style.display = 'block';
+        dropText.style.display = 'none';
+      } else {
+        alert('Upload failed.');
+        dropText.textContent = 'Drag & Drop or Click';
+      }
+    } catch (err) {
+      console.error('Upload error', err);
+      alert('Error uploading file. Make sure server.py is running.');
+      dropText.textContent = 'Drag & Drop or Click';
+    }
+  }
+
+  // Update populateHomeSettings to also show previews
+  const oldPopulate = populateHomeSettings;
+  populateHomeSettings = function() {
+    oldPopulate();
+    dropZones.forEach(zone => {
+      const hiddenInput = zone.querySelector('input[type="hidden"]');
+      const previewImg = zone.querySelector('.preview-img');
+      const dropText = zone.querySelector('.drop-text');
+      if (hiddenInput && hiddenInput.value) {
+        previewImg.src = hiddenInput.value;
+        previewImg.style.display = 'block';
+        dropText.style.display = 'none';
+      }
+    });
+  };
+"""
+
+        # We will insert this at the end, right before the IIFE closing `})();`
+        content = content.replace('checkAuth();\n\n  // Populate home settings', js_append + '\n  checkAuth();\n\n  // Populate home settings')
+        
+        with open('admin.js', 'w', encoding='utf-8') as f:
+            f.write(content)
+            
+        print("Updated admin.js")
+    except Exception as e:
+        print(f"Error: {e}")
+
+if __name__ == '__main__':
+    main()
+
+import re
+
+def main():
+    try:
+        with open('app.js', 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        js_append = """
+  // ----------------------------------------------------------------
+  // GALLERY DYNAMIC LOADING
+  // ----------------------------------------------------------------
+  function applyHomeGallery() {
+    if (!window.Store) return;
+    const gallerySection = document.getElementById('gallery');
+    const galleryGrid = document.getElementById('dynamic-gallery-grid');
+    if (!gallerySection || !galleryGrid) return;
+
+    const gallery = window.Store.getHomeGallery();
+    
+    if (!gallery || gallery.length === 0) {
+      gallerySection.style.display = 'none';
+      return;
+    }
+
+    gallerySection.style.display = 'block';
+    galleryGrid.innerHTML = '';
+    
+    gallery.forEach((url, i) => {
+      const item = document.createElement('div');
+      item.classList.add('gallery-item');
+      if (i === 0 && gallery.length % 2 !== 0) {
+        // Make the first item large if odd number of items for cooler grid
+        item.classList.add('large');
+      }
+      
+      item.innerHTML = `
+        <img src="${url}" alt="Gallery Image ${i+1}" style="width: 100%; height: 100%; object-fit: cover;" />
+        <div class="gallery-overlay">
+          <span class="gallery-label">ARTWORK ${i+1}</span>
+        </div>
+      `;
+      galleryGrid.appendChild(item);
+    });
+  }
+
+  window.addEventListener('bc_home_gallery_changed', applyHomeGallery);
+"""
+
+        # Add applyHomeGallery() to DOMContentLoaded
+        content = content.replace(
+            'applyHomeImages();\n  });',
+            'applyHomeImages();\n    if (typeof applyHomeGallery === \'function\') applyHomeGallery();\n  });'
+        )
+
+        content += js_append
+        
+        with open('app.js', 'w', encoding='utf-8') as f:
+            f.write(content)
+            
+        print("Updated app.js")
+    except Exception as e:
+        print(f"Error: {e}")
+
+if __name__ == '__main__':
+    main()
+
+import re
+
+def main():
+    try:
+        with open('admin.html', 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        gallery_html = """
+      <!-- HOME PAGE GALLERY -->
+      <div class="admin-panel" id="admin-gallery-settings-panel" style="margin-top: 2rem;">
+        <div class="admin-panel-header">
+          <h2 class="admin-panel-title">🖼️ Home Page Gallery</h2>
+        </div>
+        <div class="admin-form" style="margin-top: 1rem;">
+          <p style="color: var(--text-muted); margin-bottom: 1rem;">Upload images to display in the Visual Chronicle gallery on the home page.</p>
+          <div class="drop-zone" id="dz-gallery-upload">
+            <span class="drop-text">Drag & Drop new gallery image here or</span>
+            <button type="button" class="btn-secondary" style="margin-top: 0.5rem; pointer-events: none;">Browse Files</button>
+            <input type="file" id="file-gallery-upload" accept="image/*" />
+          </div>
+          <div id="admin-gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-top: 2rem;">
+            <!-- Gallery previews injected by JS -->
+          </div>
+        </div>
+      </div>
+"""
+
+        # Find the end of the admin-home-settings-panel
+        end_str = '</form>\n      </div>'
+        insert_idx = content.find(end_str, content.find('id="admin-home-settings-panel"'))
+        
+        if insert_idx != -1:
+            insert_idx += len(end_str)
+            content = content[:insert_idx] + gallery_html + content[insert_idx:]
+            
+            with open('admin.html', 'w', encoding='utf-8') as f:
+                f.write(content)
+            print("Successfully inserted Gallery section into admin.html")
+        else:
+            print("Could not find insertion point")
+    except Exception as e:
+        print(f"Error: {e}")
+
+if __name__ == '__main__':
+    main()
+
+import re
+
+def main():
+    try:
+        with open('admin.js', 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        js_append = """
+  /* ----------------------------------------------------------
+     GALLERY MANAGEMENT
+  ---------------------------------------------------------- */
+  const dzGallery = document.getElementById('dz-gallery-upload');
+  const galleryGrid = document.getElementById('admin-gallery-grid');
+
+  if (dzGallery) {
+    const fileInput = dzGallery.querySelector('input[type="file"]');
+    const dropText = dzGallery.querySelector('.drop-text');
+
+    dzGallery.addEventListener('click', () => fileInput.click());
+
+    dzGallery.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dzGallery.classList.add('drag-over');
+    });
+    dzGallery.addEventListener('dragleave', () => {
+      dzGallery.classList.remove('drag-over');
+    });
+    dzGallery.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dzGallery.classList.remove('drag-over');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleGalleryUpload(e.dataTransfer.files[0], dropText);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        handleGalleryUpload(e.target.files[0], dropText);
+      }
+    });
+  }
+
+  async function handleGalleryUpload(file, dropText) {
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file.');
+      return;
+    }
+
+    const origText = dropText.textContent;
+    dropText.textContent = 'Uploading...';
+    
+    try {
+      const res = await fetch('/upload?filename=' + encodeURIComponent(file.name), {
+        method: 'POST',
+        body: file
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        let gallery = window.Store.getHomeGallery();
+        gallery.push(data.path);
+        window.Store.saveHomeGallery(gallery);
+        renderAdminGallery();
+      } else {
+        alert('Upload failed.');
+      }
+    } catch (err) {
+      console.error('Upload error', err);
+      alert('Error uploading file.');
+    } finally {
+      dropText.textContent = origText;
+    }
+  }
+
+  window.deleteGalleryImage = function(index) {
+    if (confirm('Remove this image from the gallery?')) {
+      let gallery = window.Store.getHomeGallery();
+      gallery.splice(index, 1);
+      window.Store.saveHomeGallery(gallery);
+      renderAdminGallery();
+    }
+  };
+
+  function renderAdminGallery() {
+    if (!galleryGrid) return;
+    const gallery = window.Store.getHomeGallery();
+    galleryGrid.innerHTML = '';
+    gallery.forEach((url, i) => {
+      const item = document.createElement('div');
+      item.style.position = 'relative';
+      item.style.border = '1px solid rgba(255,255,255,0.1)';
+      item.style.borderRadius = '4px';
+      item.style.overflow = 'hidden';
+      item.innerHTML = `
+        <img src="${url}" style="width: 100%; height: 100px; object-fit: cover; display: block;" />
+        <button type="button" class="btn-delete-product danger" style="position: absolute; top: 5px; right: 5px; padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="deleteGalleryImage(${i})">X</button>
+      `;
+      galleryGrid.appendChild(item);
+    });
+  }
+"""
+
+        # Add renderAdminGallery() to checkAuth()
+        content = content.replace(
+            'populateHomeSettings();\n      }',
+            'populateHomeSettings();\n      }\n      if (typeof renderAdminGallery === \'function\') renderAdminGallery();'
+        )
+
+        # We will insert this at the end, right before the IIFE closing `})();`
+        content = content.replace('// Removed MutationObserver\n})();', js_append + '\n  // Removed MutationObserver\n})();')
+        
+        with open('admin.js', 'w', encoding='utf-8') as f:
+            f.write(content)
+            
+        print("Updated admin.js")
+    except Exception as e:
+        print(f"Error: {e}")
+
+if __name__ == '__main__':
+    main()
+
+/* ==============================
+   ADMIN PANEL CSS
+   ============================== */
+
+.admin-body {
+  background: var(--dark);
+  min-height: 100vh;
+}
+
+/* ==============================
+   LOGIN GATE
+   ============================== */
+.admin-login-gate {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dark);
+  background-image: radial-gradient(ellipse at 50% 50%, rgba(139,0,0,0.08) 0%, transparent 70%);
+  padding: 2rem;
+}
+
+.login-box {
+  background: var(--dark-2);
+  border: 1px solid rgba(139,0,0,0.2);
+  max-width: 440px;
+  width: 100%;
+  padding: 3rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  animation: slideUp 0.5s var(--ease-blood);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.login-logo {
+  font-family: var(--font-accent);
+  font-size: 1.4rem;
+  letter-spacing: 0.1em;
+}
+
+.login-icon { font-size: 2.5rem; margin: 0.25rem 0; }
+
+.login-title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--text-primary);
+}
+
+.login-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  max-width: 300px;
+}
+
+.login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.login-error {
+  font-size: 0.8rem;
+  color: #ff4444;
+  display: none;
+  padding: 0.5rem;
+  border: 1px solid rgba(255,68,68,0.2);
+  background: rgba(255,68,68,0.05);
+}
+
+.login-error.visible { display: block; }
+
+.login-submit {
+  width: 100%;
+  padding: 0.9rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.25em;
+  margin-top: 0.25rem;
+}
+
+.login-back {
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.login-back:hover { color: var(--blood-bright); }
+
+.login-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  width: 100%;
+}
+
+.login-hint code {
+  font-family: monospace;
+  color: var(--gold);
+  background: rgba(201,168,76,0.1);
+  padding: 0.15rem 0.4rem;
+}
+
+/* ==============================
+   ADMIN NAVBAR
+   ============================== */
+.admin-navbar {
+  position: sticky;
+  top: 0;
+  background: var(--dark-2);
+  border-bottom: 1px solid rgba(139,0,0,0.2);
+  padding: 1rem 2rem;
+  z-index: 100;
+}
+
+.admin-navbar .nav-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-badge {
+  font-family: var(--font-accent);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  background: rgba(139,0,0,0.3);
+  border: 1px solid rgba(139,0,0,0.5);
+  color: var(--blood-bright);
+  padding: 0.2rem 0.6rem;
+  margin-left: 0.75rem;
+  vertical-align: middle;
+}
+
+.admin-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.admin-nav-link {
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.admin-nav-link:hover { color: var(--text-primary); }
+.admin-nav-link.danger:hover { color: var(--blood-bright); }
+
+/* ==============================
+   ADMIN CONTAINER
+   ============================== */
+.admin-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+/* ==============================
+   STATS ROW
+   ============================== */
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+
+.stat-card {
+  background: var(--dark-3);
+  border: 1px solid rgba(255,255,255,0.05);
+  padding: 1.75rem 2rem;
+  text-align: center;
+  transition: border-color 0.3s;
+}
+
+.stat-card:hover { border-color: rgba(139,0,0,0.3); }
+
+.stat-number {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  color: var(--blood-bright);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label-admin {
+  font-family: var(--font-accent);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  color: var(--text-muted);
+}
+
+/* ==============================
+   ADMIN LAYOUT
+   ============================== */
+.admin-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* ==============================
+   ADMIN PANEL
+   ============================== */
+.admin-panel {
+  background: var(--dark-3);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.admin-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.admin-panel-title {
+  font-family: var(--font-accent);
+  font-size: 1rem;
+  letter-spacing: 0.15em;
+  color: var(--text-primary);
+}
+
+.admin-clear-btn {
+  font-family: var(--font-accent);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-muted);
+  padding: 0.35rem 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.admin-clear-btn:hover {
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+.admin-clear-btn.danger:hover {
+  border-color: var(--blood-bright);
+  color: var(--blood-bright);
+}
+
+.product-count {
+  font-family: var(--font-accent);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+}
+
+/* ==============================
+   ADMIN FORM
+   ============================== */
+.admin-form {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.image-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.image-tabs {
+  display: flex;
+  gap: 0;
+}
+
+.image-tab {
+  font-family: var(--font-accent);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  background: var(--dark-4);
+  border: 1px solid rgba(255,255,255,0.07);
+  color: var(--text-muted);
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+  transition: all 0.25s;
+  flex: 1;
+}
+
+.image-tab.active {
+  background: rgba(139,0,0,0.15);
+  border-color: var(--blood-bright);
+  color: var(--blood-bright);
+}
+
+.image-tab-content { display: none; }
+.image-tab-content.active { display: block; }
+
+.input-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 0.25rem;
+}
+
+.image-preview-wrap {
+  position: relative;
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
+.image-preview-wrap img {
+  max-width: 120px;
+  max-height: 160px;
+  object-fit: cover;
+  display: block;
+  border: 1px solid rgba(139,0,0,0.3);
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--blood);
+  border: none;
+  color: white;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.6rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.remove-image-btn:hover { background: var(--blood-bright); }
+
+.checkbox-group { flex-direction: row !important; }
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-family: var(--font-accent) !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.15em;
+  color: var(--text-secondary) !important;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--blood-bright);
+  cursor: pointer;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.form-actions .btn-primary {
+  flex: 1;
+  padding: 0.85rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  text-align: center;
+  cursor: pointer;
+}
+
+/* ==============================
+   ADMIN SEARCH
+   ============================== */
+.admin-search {
+  padding: 1.25rem 2rem 0;
+}
+
+.admin-search input {
+  width: 100%;
+}
+
+/* ==============================
+   ADMIN PRODUCT LIST
+   ============================== */
+.admin-product-list {
+  padding: 1.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 550px;
+  overflow-y: auto;
+}
+
+.admin-product-list::-webkit-scrollbar { width: 4px; }
+.admin-product-list::-webkit-scrollbar-thumb { background: rgba(139,0,0,0.3); }
+
+.admin-product-item {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  background: var(--dark-4);
+  border: 1px solid rgba(255,255,255,0.04);
+  transition: border-color 0.3s;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.admin-product-item:hover { border-color: rgba(139,0,0,0.2); }
+
+.admin-product-thumb {
+  width: 48px;
+  height: 64px;
+  object-fit: cover;
+  background: var(--dark-5);
+  flex-shrink: 0;
+}
+
+.admin-product-thumb-placeholder {
+  width: 48px;
+  height: 64px;
+  background: var(--dark-5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.admin-product-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-product-name {
+  font-family: var(--font-title);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-product-meta {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.admin-product-meta span {
+  font-family: var(--font-accent);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+}
+
+.admin-product-meta .price-tag { color: var(--gold); }
+.admin-product-meta .stock-low { color: var(--fire-bright); }
+.admin-product-meta .stock-out { color: #ff4444; }
+
+.admin-product-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.admin-action-btn {
+  font-family: var(--font-accent);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-muted);
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.admin-action-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+.admin-action-btn.edit:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.admin-action-btn.delete:hover {
+  border-color: var(--blood-bright);
+  color: var(--blood-bright);
+}
+
+.admin-action-btn.toggle-stock {
+  font-size: 0.6rem;
+}
+
+/* ==============================
+   ADMIN EMPTY
+   ============================== */
+.admin-empty {
+  padding: 3rem 2rem;
+  text-align: center;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-empty div { font-size: 2.5rem; opacity: 0.4; }
+.admin-empty p { font-size: 0.9rem; color: var(--text-secondary); }
+
+/* ==============================
+   ORDERS SECTION
+   ============================== */
+.orders-panel {
+  width: 100%;
+}
+
+.orders-list {
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.orders-list::-webkit-scrollbar { width: 4px; }
+.orders-list::-webkit-scrollbar-thumb { background: rgba(139,0,0,0.3); }
+
+.order-card {
+  background: var(--dark-4);
+  border: 1px solid rgba(255,255,255,0.04);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: border-color 0.3s;
+  animation: fadeIn 0.3s ease;
+}
+
+.order-card:hover { border-color: rgba(139,0,0,0.2); }
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.order-id {
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  color: var(--blood-bright);
+}
+
+.order-date {
+  font-family: var(--font-accent);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.order-customer {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.order-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.order-item-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.order-item-row span:last-child {
+  font-family: var(--font-accent);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.order-total-row {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  font-family: var(--font-accent);
+  letter-spacing: 0.1em;
+}
+
+.order-total-row span:first-child {
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  color: var(--text-muted);
+}
+
+.order-total-row span:last-child {
+  font-size: 1.1rem;
+  color: var(--gold);
+}
+
+.order-shipping {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1100px) {
+  .admin-stats { grid-template-columns: repeat(2, 1fr); }
+  .admin-layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .admin-container { padding: 1.5rem 1rem; }
+  .admin-stats { grid-template-columns: 1fr 1fr; }
+  .admin-form { padding: 1.25rem; }
+  .admin-product-list { padding: 1rem; }
+  .orders-list { padding: 1rem; }
+}
+
+
+/* ==============================
+   DROP ZONE STYLES
+   ============================== */
+.drop-zone {
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--text-muted);
+  transition: all 0.3s var(--ease-blood);
+  cursor: pointer;
+  position: relative;
+  background: rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+}
+.drop-zone:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(0,0,0,0.4);
+}
+.drop-zone.drag-over {
+  border-color: var(--blood-bright);
+  background: rgba(139, 0, 0, 0.1);
+}
+.drop-zone img.preview-img {
+  max-width: 100%;
+  max-height: 100px;
+  margin-bottom: 0.5rem;
+  display: none;
+  object-fit: contain;
+}
+.drop-zone span.drop-text {
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+.drop-zone input[type='file'] {
+  display: none;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADMIN PANEL — WAR OF BLOOD</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="shop.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin-body">
+
+  <!-- LOGIN GATE -->
+  <div class="admin-login-gate" id="admin-login-gate">
+    <div class="login-box">
+      <div class="login-logo">
+        <span class="nav-logo-war">WAR</span>
+        <span class="nav-logo-of"> OF </span>
+        <span class="nav-logo-blood">BLOOD</span>
+      </div>
+      <div class="login-icon">🔐</div>
+      <h1 class="login-title">Admin Panel</h1>
+      <p class="login-subtitle">Enter your password to access the store manager</p>
+      <form class="login-form" id="login-form" novalidate>
+        <div class="form-group">
+          <label for="admin-password">Password</label>
+          <input type="password" id="admin-password" placeholder="Enter admin password" autocomplete="current-password" />
+        </div>
+        <div class="login-error" id="login-error">Incorrect password. Try again.</div>
+        <button type="submit" class="btn-primary login-submit" id="login-submit-btn">ENTER THE SANCTUM</button>
+      </form>
+      <a href="shop.html" class="login-back">← Back to Shop</a>
+
+    </div>
+  </div>
+
+  <!-- ADMIN DASHBOARD -->
+  <div class="admin-dashboard" id="admin-dashboard" style="display:none">
+
+    <!-- ADMIN NAV -->
+    <nav class="admin-navbar">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <span class="nav-logo-war">WAR</span>
+          <span class="nav-logo-of"> OF </span>
+          <span class="nav-logo-blood">BLOOD</span>
+          <span class="admin-badge">ADMIN</span>
+        </div>
+        <div class="admin-nav-right">
+          <a href="shop.html" class="admin-nav-link" id="admin-view-shop">VIEW SHOP</a>
+          <button class="admin-nav-link danger" id="admin-logout-btn">LOGOUT</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- DASHBOARD CONTENT -->
+    <div class="admin-container">
+
+      <!-- STATS ROW -->
+      <div class="admin-stats" id="admin-stats">
+        <div class="stat-card" id="stat-total-products">
+          <div class="stat-number" id="stat-products-num">0</div>
+          <div class="stat-label-admin">Total Products</div>
+        </div>
+        <div class="stat-card" id="stat-total-orders">
+          <div class="stat-number" id="stat-orders-num">0</div>
+          <div class="stat-label-admin">Orders</div>
+        </div>
+        <div class="stat-card" id="stat-revenue">
+          <div class="stat-number" id="stat-revenue-num">$0</div>
+          <div class="stat-label-admin">Est. Revenue</div>
+        </div>
+        <div class="stat-card" id="stat-in-stock">
+          <div class="stat-number" id="stat-stock-num">0</div>
+          <div class="stat-label-admin">In Stock</div>
+        </div>
+      </div>
+
+      <!-- TWO-COLUMN LAYOUT -->
+      <div class="admin-layout">
+
+        <!-- ADD PRODUCT FORM -->
+        <div class="admin-panel" id="admin-add-panel">
+          <div class="admin-panel-header">
+            <h2 class="admin-panel-title" id="form-panel-title">➕ Add New Product</h2>
+            <button class="admin-clear-btn" id="clear-form-btn">CLEAR</button>
+          </div>
+          <form class="admin-form" id="product-form" novalidate>
+            <input type="hidden" id="edit-product-id" value="" />
+
+            <div class="form-group">
+              <label for="product-title">Product Title *</label>
+              <input type="text" id="product-title" placeholder="War of Blood — Vol. 1: The Crimson Night" required />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="product-type">Type *</label>
+                <select id="product-type" required>
+                  <option value="">Select type</option>
+                  <option value="volume">Single Volume</option>
+                  <option value="bundle">Bundle</option>
+                  <option value="special">Special Edition</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="product-volume">Volume / Edition</label>
+                <input type="text" id="product-volume" placeholder="Vol. 1" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="product-price">Price (USD) *</label>
+                <input type="number" id="product-price" placeholder="12.99" min="0" step="0.01" required />
+              </div>
+              <div class="form-group">
+                <label for="product-original-price">Original Price (for discount)</label>
+                <input type="number" id="product-original-price" placeholder="16.99" min="0" step="0.01" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="product-description">Description *</label>
+              <textarea id="product-description" rows="4" placeholder="Describe this volume — the plot, what readers can expect..." required></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="product-stock">Stock Quantity *</label>
+                <input type="number" id="product-stock" placeholder="100" min="0" required />
+              </div>
+              <div class="form-group">
+                <label for="product-pages">Pages</label>
+                <input type="number" id="product-pages" placeholder="200" min="1" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Cover Image</label>
+              <div class="image-input-group">
+                <div class="image-tabs">
+                  <button type="button" class="image-tab active" id="tab-url" data-tab="url">Image URL</button>
+                  <button type="button" class="image-tab" id="tab-upload" data-tab="upload">Upload File</button>
+                  <button type="button" class="image-tab" id="tab-existing" data-tab="existing">Use Existing</button>
+                </div>
+                <div class="image-tab-content active" id="tab-content-url">
+                  <input type="url" id="product-image-url" placeholder="https://example.com/cover.jpg" />
+                </div>
+                <div class="image-tab-content" id="tab-content-upload">
+                  <input type="file" id="product-image-upload" accept="image/*" />
+                  <p class="input-hint">Image will be stored as base64. Best under 1MB.</p>
+                </div>
+                <div class="image-tab-content" id="tab-content-existing">
+                  <select id="product-image-existing">
+                    <option value="">Select existing image</option>
+                    <option value="images/hoodie_lightning.jpg">Raiken Hoodie (Lightning) — hoodie_lightning.jpg</option>
+                    <option value="images/hoodie_raiken.jpg">Raiken Hoodie (Storm) — hoodie_raiken.jpg</option>
+                  </select>
+                </div>
+              </div>
+              <div class="image-preview-wrap" id="image-preview-wrap" style="display:none">
+                <img id="image-preview" src="" alt="Cover preview" />
+                <button type="button" class="remove-image-btn" id="remove-image-btn">✕ Remove</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="product-badge">Badge Label (optional)</label>
+              <input type="text" id="product-badge" placeholder="NEW · BESTSELLER · LIMITED · SOLD OUT" />
+            </div>
+
+            <div class="form-group checkbox-group">
+              <label class="checkbox-label" for="product-featured">
+                <input type="checkbox" id="product-featured" />
+                <span class="checkmark"></span>
+                Mark as Featured Product
+              </label>
+            </div>
+
+            <div class="form-error" id="form-error"></div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" id="save-product-btn">➕ ADD PRODUCT</button>
+              <button type="button" class="btn-secondary" id="cancel-edit-btn" style="display:none">CANCEL EDIT</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- PRODUCT LIST -->
+        <div class="admin-panel" id="admin-products-panel">
+          <div class="admin-panel-header">
+            <h2 class="admin-panel-title">📦 Your Products</h2>
+            <span class="product-count" id="product-count-label">0 items</span>
+          </div>
+          <div class="admin-search">
+            <input type="text" id="admin-search-input" placeholder="Search products..." />
+          </div>
+          <div class="admin-product-list" id="admin-product-list">
+            <!-- Injected by JS -->
+          </div>
+          <div class="admin-empty" id="admin-empty-products" style="display:none">
+            <div>📖</div>
+            <p>No products yet. Add your first manga volume!</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ORDERS SECTION -->
+      <div class="admin-panel orders-panel" id="admin-orders-panel">
+        <div class="admin-panel-header">
+          <h2 class="admin-panel-title">📋 Recent Orders</h2>
+          <button class="admin-clear-btn danger" id="clear-orders-btn">CLEAR ALL</button>
+        </div>
+        <div class="orders-list" id="orders-list">
+          <!-- Injected by JS -->
+        </div>
+        <div class="admin-empty" id="admin-empty-orders" style="display:none">
+          <div>📋</div>
+          <p>No orders yet. Share your shop to start selling!</p>
+        </div>
+      </div>
+
+
+      <!-- HOME PAGE SETTINGS -->
+      <div class="admin-panel" id="admin-home-settings-panel" style="margin-top: 2rem;">
+        <div class="admin-panel-header">
+          <h2 class="admin-panel-title">🖼️ Home Page Settings</h2>
+        </div>
+        <form class="admin-form" id="home-settings-form" novalidate>
+          <div class="form-section">
+            <h3 class="form-section-title" style="margin-top: 1rem; color: var(--blood-bright);">Intro Splash Images</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="home-intro-1">Intro Slide 1</label>
+                <div class="drop-zone" id="dz-home-intro-1" data-target="home-intro-1">
+                  <img src="" class="preview-img" id="preview-home-intro-1" />
+                  <span class="drop-text">Drag & Drop or</span>
+                  <button type="button" class="btn-secondary" style="margin-top: 0.5rem; pointer-events: none;">Browse Files</button>
+                  <input type="file" id="file-home-intro-1" accept="image/*" />
+                  <input type="hidden" id="home-intro-1" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="home-intro-2">Intro Slide 2</label>
+                <div class="drop-zone" id="dz-home-intro-2" data-target="home-intro-2">
+                  <img src="" class="preview-img" id="preview-home-intro-2" />
+                  <span class="drop-text">Drag & Drop or</span>
+                  <button type="button" class="btn-secondary" style="margin-top: 0.5rem; pointer-events: none;">Browse Files</button>
+                  <input type="file" id="file-home-intro-2" accept="image/*" />
+                  <input type="hidden" id="home-intro-2" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="home-intro-3">Intro Slide 3</label>
+                <div class="drop-zone" id="dz-home-intro-3" data-target="home-intro-3">
+                  <img src="" class="preview-img" id="preview-home-intro-3" />
+                  <span class="drop-text">Drag & Drop or</span>
+                  <button type="button" class="btn-secondary" style="margin-top: 0.5rem; pointer-events: none;">Browse Files</button>
+                  <input type="file" id="file-home-intro-3" accept="image/*" />
+                  <input type="hidden" id="home-intro-3" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3 class="form-section-title" style="margin-top: 1rem; color: var(--blood-bright);">Hero Section</h3>
+            <div class="form-group">
+              <label for="home-hero">Hero Background Image</label>
+              <div class="drop-zone" id="dz-home-hero" data-target="home-hero">
+                  <img src="" class="preview-img" id="preview-home-hero" />
+                  <span class="drop-text">Drag & Drop or</span>
+                  <button type="button" class="btn-secondary" style="margin-top: 0.5rem; pointer-events: none;">Browse Files</button>
+                  <input type="file" id="file-home-hero" accept="image/*" />
+                  <input type="hidden" id="home-hero" />
+                </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3 class="form-section-title" style="margin-top: 1rem; color: var(--blood-bright);">Story Section Images</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="home-story-1">Story Block 1</label>
+                <div class="drop-zone" id="dz-home-story-1" data-target="home-story-1">
+                  <img src="" class="preview-img" id="preview-home-story-1" />
+                  <span class="drop-text">Drag & Drop or</span>
+                  <button type="button" class="btn-secondary" style="margin-top: 0.5rem; pointer-events: none;">Browse Files</button>
+                  <input type="file" id="file-home-story-1" accept="image/*" />
+                  <input type="hidden" id="home-story-1" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="home-story-2">Story Block 2</label>
+                <div class="drop-zone" id="dz-home-story-2" data-target="home-story-2">
+                  <img src="" class="preview-img" id="preview-home-story-2" />
+                  <span class="drop-text">Drag & Drop or</span>
+                  <button type="button" class="btn-secondary" style="margin-top: 0.5rem; pointer-events: none;">Browse Files</button>
+                  <input type="file" id="file-home-story-2" accept="image/*" />
+                  <input type="hidden" id="home-story-2" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="home-story-3">Story Block 3</label>
+                <div class="drop-zone" id="dz-home-story-3" data-target="home-story-3">
+                  <img src="" class="preview-img" id="preview-home-story-3" />
+                  <span class="drop-text">Drag & Drop or</span>
+                  <button type="button" class="btn-secondary" style="margin-top: 0.5rem; pointer-events: none;">Browse Files</button>
+                  <input type="file" id="file-home-story-3" accept="image/*" />
+                  <input type="hidden" id="home-story-3" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3 class="form-section-title" style="margin-top: 1rem; color: var(--blood-bright);">Character Section Images</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="home-char-1">Character 1</label>
+                <div class="drop-zone" id="dz-home-char-1" data-target="home-char-1">
+                  <img src="" class="preview-img" id="preview-home-char-1" />
+                  <span class="drop-text">Drag & Drop or</span>
+                  <button type="button" class="btn-secondary" style="margin-top: 0.5rem; pointer-events: none;">Browse Files</button>
+                  <input type="file" id="file-home-char-1" accept="image/*" />
+                  <input type="hidden" id="home-char-1" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="home-char-2">Character 2</label>
+                <div class="drop-zone" id="dz-home-char-2" data-target="home-char-2">
+                  <img src="" class="preview-img" id="preview-home-char-2" />
+                  <span class="drop-text">Drag & Drop or</span>
+                  <button type="button" class="btn-secondary" style="margin-top: 0.5rem; pointer-events: none;">Browse Files</button>
+                  <input type="file" id="file-home-char-2" accept="image/*" />
+                  <input type="hidden" id="home-char-2" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="home-char-3">Character 3</label>
+                <div class="drop-zone" id="dz-home-char-3" data-target="home-char-3">
+                  <img src="" class="preview-img" id="preview-home-char-3" />
+                  <span class="drop-text">Drag & Drop or</span>
+                  <button type="button" class="btn-secondary" style="margin-top: 0.5rem; pointer-events: none;">Browse Files</button>
+                  <input type="file" id="file-home-char-3" accept="image/*" />
+                  <input type="hidden" id="home-char-3" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions" style="margin-top: 2rem;">
+            <button type="submit" class="btn-primary" id="save-home-settings-btn">💾 SAVE HOME SETTINGS</button>
+          </div>
+        </form>
+      </div>
+      <!-- HOME PAGE GALLERY -->
+      <div class="admin-panel" id="admin-gallery-settings-panel" style="margin-top: 2rem;">
+        <div class="admin-panel-header">
+          <h2 class="admin-panel-title">🖼️ Home Page Gallery</h2>
+        </div>
+        <div class="admin-form" style="margin-top: 1rem;">
+          <p style="color: var(--text-muted); margin-bottom: 1rem;">Upload images to display in the Visual Chronicle gallery on the home page.</p>
+          <div class="drop-zone" id="dz-gallery-upload">
+            <span class="drop-text">Drag & Drop new gallery image here or</span>
+            <button type="button" class="btn-secondary" style="margin-top: 0.5rem; pointer-events: none;">Browse Files</button>
+            <input type="file" id="file-gallery-upload" accept="image/*" />
+          </div>
+          <div id="admin-gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-top: 2rem;">
+            <!-- Gallery previews injected by JS -->
+          </div>
+        </div>
+      </div>
+      <!-- CONTACT INFO SETTINGS -->
+      <div class="admin-panel" id="admin-contact-settings-panel" style="margin-top: 2rem;">
+        <div class="admin-panel-header">
+          <h2 class="admin-panel-title">📞 Contact Info</h2>
+        </div>
+        <form class="admin-form" id="contact-settings-form" style="margin-top: 1rem;">
+          <div class="form-group">
+            <label for="contact-mobile">Mobile Number</label>
+            <input type="text" id="contact-mobile" placeholder="+1 (555) 019-2834" />
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Save Contact Info</button>
+          </div>
+        </form>
+      </div>
+
+
+
+    </div>
+  </div>
+
+  <script src="store.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
+
+// Administration Dashboard logic
+(function () {
+  'use strict';
+
+  const loginGate = document.getElementById('admin-login-gate');
+  const dashboard = document.getElementById('admin-dashboard');
+  const loginForm = document.getElementById('login-form');
+  const loginError = document.getElementById('login-error');
+  const logoutBtn = document.getElementById('admin-logout-btn');
+
+  // Stats
+  const statProductsNum = document.getElementById('stat-products-num');
+  const statOrdersNum = document.getElementById('stat-orders-num');
+  const statRevenueNum = document.getElementById('stat-revenue-num');
+  const statStockNum = document.getElementById('stat-stock-num');
+
+  // Product Form
+  const productForm = document.getElementById('product-form');
+  const editIdInput = document.getElementById('edit-product-id');
+  const titleInput = document.getElementById('product-title');
+  const typeSelect = document.getElementById('product-type');
+  const volumeInput = document.getElementById('product-volume');
+  const priceInput = document.getElementById('product-price');
+  const origPriceInput = document.getElementById('product-original-price');
+  const descInput = document.getElementById('product-description');
+  const stockInput = document.getElementById('product-stock');
+  const pagesInput = document.getElementById('product-pages');
+  const badgeInput = document.getElementById('product-badge');
+  const featuredCheck = document.getElementById('product-featured');
+  const formError = document.getElementById('form-error');
+  const saveBtn = document.getElementById('save-product-btn');
+  const cancelEditBtn = document.getElementById('cancel-edit-btn');
+  const clearFormBtn = document.getElementById('clear-form-btn');
+  const formPanelTitle = document.getElementById('form-panel-title');
+
+  // Image Tabs
+  const tabs = document.querySelectorAll('.image-tab');
+  const tabContents = document.querySelectorAll('.image-tab-content');
+  const imageUrlInput = document.getElementById('product-image-url');
+  const imageUploadInput = document.getElementById('product-image-upload');
+  const imageExistingSelect = document.getElementById('product-image-existing');
+  const previewWrap = document.getElementById('image-preview-wrap');
+  const previewImg = document.getElementById('image-preview');
+  const removeImgBtn = document.getElementById('remove-image-btn');
+
+  // List & Orders
+  const productList = document.getElementById('admin-product-list');
+  const productCountLabel = document.getElementById('product-count-label');
+  const searchInput = document.getElementById('admin-search-input');
+  const emptyProducts = document.getElementById('admin-empty-products');
+  const ordersList = document.getElementById('orders-list');
+  const emptyOrders = document.getElementById('admin-empty-orders');
+  const clearOrdersBtn = document.getElementById('clear-orders-btn');
+
+  let currentImage = '';
+  let activeTab = 'url';
+
+  // Authentication
+  const AUTH_KEY = 'bc_admin_auth';
+  const PASSWORD = 'bloodcons2026';
+
+  function checkAuth() {
+    if (sessionStorage.getItem(AUTH_KEY) === 'true') {
+      loginGate.style.display = 'none';
+      dashboard.style.display = 'block';
+      initDashboard();
+      if (typeof populateHomeSettings === 'function') {
+        populateHomeSettings();
+      }
+      if (typeof renderAdminGallery === 'function') renderAdminGallery();
+      if (typeof populateContactSettings === 'function') populateContactSettings();
+    } else {
+      loginGate.style.display = 'flex';
+      dashboard.style.display = 'none';
+    }
+  }
+
+  loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const val = document.getElementById('admin-password').value;
+    if (val === PASSWORD) {
+      sessionStorage.setItem(AUTH_KEY, 'true');
+      loginError.style.display = 'none';
+      checkAuth();
+    } else {
+      loginError.style.display = 'block';
+    }
+  });
+
+  logoutBtn.addEventListener('click', () => {
+    sessionStorage.removeItem(AUTH_KEY);
+    checkAuth();
+  });
+
+  // Image input handling
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tabContents.forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      const target = tab.dataset.tab;
+      document.getElementById(`tab-content-${target}`).classList.add('active');
+      activeTab = target;
+    });
+  });
+
+  // Handle Existing Select
+  imageExistingSelect.addEventListener('change', () => {
+    if (imageExistingSelect.value) {
+      setPreview(imageExistingSelect.value);
+    }
+  });
+
+  // Handle Upload via server endpoint
+  imageUploadInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please upload an image file.');
+        return;
+      }
+      try {
+        const res = await fetch('/upload?filename=' + encodeURIComponent(file.name), {
+          method: 'POST',
+          body: file
+        });
+        const data = await res.json();
+        if (data.success) {
+          setPreview(data.path);
+        } else {
+          alert('Upload failed.');
+        }
+      } catch (err) {
+        console.error('Upload error', err);
+        // Fallback to base64 if upload fails
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+          setPreview(evt.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  });
+
+  // Handle URL change
+  imageUrlInput.addEventListener('input', () => {
+    if (imageUrlInput.value) {
+      setPreview(imageUrlInput.value);
+    }
+  });
+
+  function setPreview(src) {
+    currentImage = src;
+    previewImg.src = src;
+    previewWrap.style.display = 'flex';
+  }
+
+  removeImgBtn.addEventListener('click', () => {
+    currentImage = '';
+    previewImg.src = '';
+    previewWrap.style.display = 'none';
+    imageUploadInput.value = '';
+    imageExistingSelect.value = '';
+    imageUrlInput.value = '';
+  });
+
+  // Dashboard logic
+  function initDashboard() {
+    renderProducts();
+    renderOrders();
+    updateStats();
+  }
+
+  function updateStats() {
+    const products = window.Store.getProducts();
+    const orders = window.Store.getOrders();
+
+    statProductsNum.textContent = products.length;
+    statOrdersNum.textContent = orders.length;
+
+    const totalStock = products.reduce((acc, p) => acc + parseInt(p.stock || 0), 0);
+    statStockNum.textContent = totalStock;
+
+    const rev = orders.reduce((acc, o) => acc + parseFloat(o.total || 0), 0);
+    statRevenueNum.textContent = `₹${rev.toFixed(2)}`;
+  }
+
+  function renderProducts() {
+    const products = window.Store.getProducts();
+    const query = searchInput.value.toLowerCase();
+    const filtered = products.filter(p => p.title.toLowerCase().includes(query) || p.description.toLowerCase().includes(query));
+
+    productList.innerHTML = '';
+    productCountLabel.textContent = `${filtered.length} items`;
+
+    if (filtered.length === 0) {
+      emptyProducts.style.display = 'block';
+      return;
+    }
+    emptyProducts.style.display = 'none';
+
+    filtered.forEach(p => {
+      const item = document.createElement('div');
+      item.classList.add('admin-product-item');
+      item.innerHTML = `
+        <img class="admin-product-thumb" src="${p.image || './images/hoodie_lightning.jpg'}" alt="" />
+        <div class="admin-product-info">
+          <div class="admin-product-title">${p.title}</div>
+          <div class="admin-product-meta">
+            Price: ₹${p.price} | Stock: ${p.stock} | Type: ${p.type.toUpperCase()}
+          </div>
+        </div>
+        <div class="admin-product-actions">
+          <button class="btn-edit-product" data-id="${p.id}">EDIT</button>
+          <button class="btn-delete-product danger" data-id="${p.id}">DELETE</button>
+        </div>
+      `;
+      productList.appendChild(item);
+    });
+
+    // Wire up buttons
+    document.querySelectorAll('.btn-edit-product').forEach(btn => {
+      btn.addEventListener('click', () => editProduct(btn.dataset.id));
+    });
+    document.querySelectorAll('.btn-delete-product').forEach(btn => {
+      btn.addEventListener('click', () => deleteProduct(btn.dataset.id));
+    });
+  }
+
+  searchInput.addEventListener('input', renderProducts);
+
+  function editProduct(id) {
+    const products = window.Store.getProducts();
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+
+    editIdInput.value = p.id;
+    titleInput.value = p.title;
+    typeSelect.value = p.type;
+    volumeInput.value = p.volume || '';
+    priceInput.value = p.price;
+    origPriceInput.value = p.originalPrice || '';
+    descInput.value = p.description;
+    stockInput.value = p.stock;
+    pagesInput.value = p.pages || '';
+    badgeInput.value = p.badge || '';
+    featuredCheck.checked = !!p.featured;
+
+    if (p.image) {
+      setPreview(p.image);
+    } else {
+      removeImgBtn.click();
+    }
+
+    formPanelTitle.textContent = '✏️ Edit Product';
+    saveBtn.textContent = 'SAVE CHANGES';
+    cancelEditBtn.style.display = 'inline-block';
+    document.getElementById('admin-add-panel').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function deleteProduct(id) {
+    if (confirm('Are you sure you want to delete this product?')) {
+      let products = window.Store.getProducts();
+      products = products.filter(p => p.id !== id);
+      window.Store.saveProducts(products);
+      initDashboard();
+    }
+  }
+
+  function resetForm() {
+    editIdInput.value = '';
+    productForm.reset();
+    removeImgBtn.click();
+    formPanelTitle.textContent = '➕ Add New Product';
+    saveBtn.textContent = '➕ ADD PRODUCT';
+    cancelEditBtn.style.display = 'none';
+  }
+
+  cancelEditBtn.addEventListener('click', resetForm);
+  clearFormBtn.addEventListener('click', resetForm);
+
+  productForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    formError.textContent = '';
+
+    if (!titleInput.value || !typeSelect.value || !priceInput.value || !descInput.value || stockInput.value === '') {
+      formError.textContent = 'Please fill out all required fields.';
+      return;
+    }
+
+    const products = window.Store.getProducts();
+    const id = editIdInput.value || `product-${Date.now()}`;
+
+    const newProduct = {
+      id: id,
+      title: titleInput.value,
+      type: typeSelect.value,
+      volume: volumeInput.value || null,
+      price: parseFloat(priceInput.value),
+      originalPrice: origPriceInput.value ? parseFloat(origPriceInput.value) : null,
+      description: descInput.value,
+      stock: parseInt(stockInput.value),
+      pages: pagesInput.value ? parseInt(pagesInput.value) : null,
+      image: currentImage || './images/hoodie_lightning.jpg',
+      badge: badgeInput.value || null,
+      featured: featuredCheck.checked
+    };
+
+    if (editIdInput.value) {
+      const idx = products.findIndex(x => x.id === id);
+      if (idx !== -1) products[idx] = newProduct;
+    } else {
+      products.push(newProduct);
+    }
+
+    window.Store.saveProducts(products);
+    resetForm();
+    initDashboard();
+  });
+
+  function renderOrders() {
+    const orders = window.Store.getOrders();
+    ordersList.innerHTML = '';
+
+    if (orders.length === 0) {
+      emptyOrders.style.display = 'block';
+      clearOrdersBtn.style.display = 'none';
+      return;
+    }
+    emptyOrders.style.display = 'none';
+    clearOrdersBtn.style.display = 'inline-block';
+
+    orders.forEach(o => {
+      const card = document.createElement('div');
+      card.classList.add('order-card-admin');
+      card.innerHTML = `
+        <div class="order-header-admin">
+          <div><strong>Order:</strong> #${o.id}</div>
+          <div><strong>Date:</strong> ${new Date(o.date).toLocaleDateString()}</div>
+        </div>
+        <div class="order-details-admin">
+          <div><strong>Customer:</strong> ${o.customer.name} (${o.customer.email})</div>
+          <div><strong>Address:</strong> ${o.customer.address}, ${o.customer.city}, ${o.customer.zip}, ${o.customer.country}</div>
+          <div style="margin-top: 8px;"><strong>Items:</strong></div>
+          <ul style="padding-left: 16px; margin: 4px 0;">
+            ${o.items.map(item => `<li>${item.title} (x${item.quantity}) - ₹${item.price}</li>`).join('')}
+          </ul>
+          <div style="margin-top: 8px; font-weight: bold;">Total: ₹${o.total}</div>
+        </div>
+      `;
+      ordersList.appendChild(card);
+    });
+  }
+
+  clearOrdersBtn.addEventListener('click', () => {
+    if (confirm('Clear all orders?')) {
+      window.Store.saveOrders([]);
+      initDashboard();
+    }
+  });
+
+  // Sync listener
+  window.addEventListener('bc_products_changed', renderProducts);
+  window.addEventListener('bc_orders_changed', renderOrders);
+
+  /* ----------------------------------------------------------
+     HOME PAGE IMAGE SETTINGS
+  ---------------------------------------------------------- */
+  const homeSettingsForm = document.getElementById('home-settings-form');
+
+  const homeFields = {
+    intro1: document.getElementById('home-intro-1'),
+    intro2: document.getElementById('home-intro-2'),
+    intro3: document.getElementById('home-intro-3'),
+    hero:   document.getElementById('home-hero'),
+    story1: document.getElementById('home-story-1'),
+    story2: document.getElementById('home-story-2'),
+    story3: document.getElementById('home-story-3'),
+    char1:  document.getElementById('home-char-1'),
+    char2:  document.getElementById('home-char-2'),
+    char3:  document.getElementById('home-char-3')
+  };
+
+  // Populate home settings when dashboard loads
+  function populateHomeSettings() {
+    if (!window.Store || !homeSettingsForm) return;
+    const imgs = window.Store.getHomeImages();
+    for (const [key, input] of Object.entries(homeFields)) {
+      if (input && imgs[key]) {
+        input.value = imgs[key];
+      }
+    }
+  }
+
+  if (homeSettingsForm) {
+    homeSettingsForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const images = {};
+      for (const [key, input] of Object.entries(homeFields)) {
+        images[key] = input ? input.value.trim() : '';
+      }
+      window.Store.saveHomeImages(images);
+
+      // Show brief success feedback
+      const btn = document.getElementById('save-home-settings-btn');
+      const original = btn.textContent;
+      btn.textContent = '✅ SAVED!';
+      btn.style.background = 'rgba(0,180,100,0.3)';
+      btn.style.borderColor = '#00d47a';
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.style.background = '';
+        btn.style.borderColor = '';
+      }, 2000);
+    });
+  }
+
+  
+  /* ----------------------------------------------------------
+     DRAG AND DROP UPLOADS
+  ---------------------------------------------------------- */
+  const dropZones = document.querySelectorAll('.drop-zone');
+  
+  dropZones.forEach(zone => {
+    const fileInput = zone.querySelector('input[type="file"]');
+    const hiddenInput = zone.querySelector('input[type="hidden"]');
+    const previewImg = zone.querySelector('.preview-img');
+    const dropText = zone.querySelector('.drop-text');
+
+    // Click to upload
+    zone.addEventListener('click', () => fileInput.click());
+
+    // Drag events
+    zone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      zone.classList.add('drag-over');
+    });
+    zone.addEventListener('dragleave', () => {
+      zone.classList.remove('drag-over');
+    });
+    zone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleUpload(e.dataTransfer.files[0], zone, hiddenInput, previewImg, dropText);
+      }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        handleUpload(e.target.files[0], zone, hiddenInput, previewImg, dropText);
+      }
+    });
+  });
+
+  async function handleUpload(file, zone, hiddenInput, previewImg, dropText) {
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file.');
+      return;
+    }
+
+    dropText.textContent = 'Uploading...';
+    
+    try {
+      const res = await fetch('/upload?filename=' + encodeURIComponent(file.name), {
+        method: 'POST',
+        body: file
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        hiddenInput.value = data.path;
+        previewImg.src = data.path;
+        previewImg.style.display = 'block';
+        dropText.style.display = 'none';
+      } else {
+        alert('Upload failed.');
+        dropText.textContent = 'Drag & Drop or Click';
+      }
+    } catch (err) {
+      console.error('Upload error', err);
+      alert('Error uploading file. Make sure server.py is running.');
+      dropText.textContent = 'Drag & Drop or Click';
+    }
+  }
+
+  // Update populateHomeSettings to also show previews
+  const oldPopulate = populateHomeSettings;
+  populateHomeSettings = function() {
+    oldPopulate();
+    dropZones.forEach(zone => {
+      const hiddenInput = zone.querySelector('input[type="hidden"]');
+      const previewImg = zone.querySelector('.preview-img');
+      const dropText = zone.querySelector('.drop-text');
+      if (hiddenInput && hiddenInput.value) {
+        previewImg.src = hiddenInput.value;
+        previewImg.style.display = 'block';
+        dropText.style.display = 'none';
+      }
+    });
+  };
+
+  checkAuth();
+
+  
+  /* ----------------------------------------------------------
+     GALLERY MANAGEMENT
+  ---------------------------------------------------------- */
+  const dzGallery = document.getElementById('dz-gallery-upload');
+  const galleryGrid = document.getElementById('admin-gallery-grid');
+
+  if (dzGallery) {
+    const fileInput = dzGallery.querySelector('input[type="file"]');
+    const dropText = dzGallery.querySelector('.drop-text');
+
+    dzGallery.addEventListener('click', () => fileInput.click());
+
+    dzGallery.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dzGallery.classList.add('drag-over');
+    });
+    dzGallery.addEventListener('dragleave', () => {
+      dzGallery.classList.remove('drag-over');
+    });
+    dzGallery.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dzGallery.classList.remove('drag-over');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleGalleryUpload(e.dataTransfer.files[0], dropText);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        handleGalleryUpload(e.target.files[0], dropText);
+      }
+    });
+  }
+
+  async function handleGalleryUpload(file, dropText) {
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file.');
+      return;
+    }
+
+    const origText = dropText.textContent;
+    dropText.textContent = 'Uploading...';
+    
+    try {
+      const res = await fetch('/upload?filename=' + encodeURIComponent(file.name), {
+        method: 'POST',
+        body: file
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        let gallery = window.Store.getHomeGallery();
+        gallery.push(data.path);
+        window.Store.saveHomeGallery(gallery);
+        renderAdminGallery();
+      if (typeof populateContactSettings === 'function') populateContactSettings();
+      } else {
+        alert('Upload failed.');
+      }
+    } catch (err) {
+      console.error('Upload error', err);
+      alert('Error uploading file.');
+    } finally {
+      dropText.textContent = origText;
+    }
+  }
+
+  window.deleteGalleryImage = function(index) {
+    if (confirm('Remove this image from the gallery?')) {
+      let gallery = window.Store.getHomeGallery();
+      gallery.splice(index, 1);
+      window.Store.saveHomeGallery(gallery);
+      renderAdminGallery();
+      if (typeof populateContactSettings === 'function') populateContactSettings();
+    }
+  };
+
+  function renderAdminGallery() {
+    if (!galleryGrid) return;
+    const gallery = window.Store.getHomeGallery();
+    galleryGrid.innerHTML = '';
+    gallery.forEach((url, i) => {
+      const item = document.createElement('div');
+      item.style.position = 'relative';
+      item.style.border = '1px solid rgba(255,255,255,0.1)';
+      item.style.borderRadius = '4px';
+      item.style.overflow = 'hidden';
+      item.innerHTML = `
+        <img src="${url}" style="width: 100%; height: 100px; object-fit: cover; display: block;" />
+        <button type="button" class="btn-delete-product danger" style="position: absolute; top: 5px; right: 5px; padding: 0.2rem 0.5rem; font-size: 0.7rem;" onclick="deleteGalleryImage(${i})">X</button>
+      `;
+      galleryGrid.appendChild(item);
+    });
+  }
+
+  
+  /* ----------------------------------------------------------
+     CONTACT INFO MANAGEMENT
+  ---------------------------------------------------------- */
+  function populateContactSettings() {
+    const mobileInput = document.getElementById('contact-mobile');
+    if (!mobileInput) return;
+    
+    const info = window.Store.getContactInfo();
+    mobileInput.value = info.mobile || '';
+  }
+
+  const contactForm = document.getElementById('contact-settings-form');
+  if (contactForm) {
+    contactForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const mobile = document.getElementById('contact-mobile').value.trim();
+      
+      window.Store.saveContactInfo({ mobile });
+      alert('Contact info saved successfully!');
+    });
+  }
+
+  // Removed MutationObserver
+})();
+
+/* ============================================================
+   WAR OF BLOOD — JavaScript
+   ============================================================ */
+
+(function () {
+  'use strict';
+
+  /* ----------------------------------------------------------
+     CURSOR TRACKER
+  ---------------------------------------------------------- */
+  document.addEventListener('mousemove', (e) => {
+    document.body.style.setProperty('--cx', e.clientX + 'px');
+    document.body.style.setProperty('--cy', e.clientY + 'px');
+  });
+
+  /* ----------------------------------------------------------
+     INTRO SPLASH
+  ---------------------------------------------------------- */
+  const INTRO_DURATION = 9000; // total ms
+  const SLIDE_DURATION = 3000;  // ms per slide
+
+  const splash        = document.getElementById('intro-splash');
+  const mainSite      = document.getElementById('main-site');
+  const progressBar   = document.getElementById('intro-progress-bar');
+  const skipBtn       = document.getElementById('skip-intro');
+  const slides        = document.querySelectorAll('.intro-slide');
+  const dripsContainer= document.getElementById('blood-drips');
+
+  let currentSlide  = 0;
+  let slideInterval = null;
+  let progressTimer = null;
+  let startTime     = null;
+
+  // Generate blood drip elements
+  function createBloodDrips() {
+    const count = 8;
+    for (let i = 0; i < count; i++) {
+      const drip = document.createElement('div');
+      drip.classList.add('blood-drip');
+      const h = 30 + Math.random() * 50;
+      drip.style.setProperty('--h', h + 'px');
+      drip.style.setProperty('--dur', (1.2 + Math.random() * 0.8) + 's');
+      drip.style.setProperty('--delay', (0.5 + Math.random() * 1.5) + 's');
+      dripsContainer.appendChild(drip);
+    }
+  }
+  createBloodDrips();
+
+  // Advance to next slide
+  function goToSlide(idx) {
+    slides[currentSlide].classList.remove('active');
+    // Reset caption animation
+    const prevCaption = slides[currentSlide].querySelector('.slide-caption');
+    if (prevCaption) {
+      prevCaption.style.animation = 'none';
+      prevCaption.offsetHeight; // force reflow
+    }
+    currentSlide = idx % slides.length;
+    slides[currentSlide].classList.add('active');
+    // Restart caption animation
+    const newCaption = slides[currentSlide].querySelector('.slide-caption');
+    if (newCaption) {
+      newCaption.style.animation = '';
+    }
+  }
+
+  // Animate progress bar
+  function animateProgress() {
+    startTime = performance.now();
+    function tick(now) {
+      const elapsed = now - startTime;
+      const pct = Math.min((elapsed / INTRO_DURATION) * 100, 100);
+      progressBar.style.width = pct + '%';
+      if (elapsed < INTRO_DURATION) {
+        progressTimer = requestAnimationFrame(tick);
+      }
+    }
+    progressTimer = requestAnimationFrame(tick);
+  }
+
+  // Start intro slideshow
+  function startIntro() {
+    animateProgress();
+    slideInterval = setInterval(() => {
+      goToSlide(currentSlide + 1);
+    }, SLIDE_DURATION);
+
+    // Auto-end intro after INTRO_DURATION
+    setTimeout(endIntro, INTRO_DURATION);
+  }
+
+  // End intro & reveal main site
+  function endIntro() {
+    clearInterval(slideInterval);
+    cancelAnimationFrame(progressTimer);
+    progressBar.style.width = '100%';
+
+    splash.style.transition = 'opacity 1s ease';
+    splash.style.opacity = '0';
+    splash.style.pointerEvents = 'none';
+
+    mainSite.classList.remove('hidden');
+    mainSite.style.opacity = '0';
+    setTimeout(() => {
+      mainSite.style.transition = 'opacity 0.8s ease';
+      mainSite.style.opacity = '1';
+      splash.style.display = 'none';
+    }, 800);
+
+    // Trigger initial scroll animations
+    setTimeout(checkScrollAnimations, 200);
+  }
+
+  skipBtn.addEventListener('click', endIntro);
+  startIntro();
+
+  /* ----------------------------------------------------------
+     PARTICLES
+  ---------------------------------------------------------- */
+  function createParticles() {
+    const field = document.getElementById('particle-field');
+    if (!field) return;
+    const colors = [
+      'rgba(139,0,0,0.6)',
+      'rgba(255,107,0,0.5)',
+      'rgba(123,92,255,0.4)',
+      'rgba(201,168,76,0.4)',
+      'rgba(204,0,0,0.5)',
+    ];
+    for (let i = 0; i < 40; i++) {
+      const p = document.createElement('div');
+      p.classList.add('particle');
+      const size = 2 + Math.random() * 5;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const dur = 6 + Math.random() * 12;
+      const delay = -(Math.random() * dur);
+      const x = Math.random() * 100;
+      const y = Math.random() * 100;
+      const tx = (Math.random() - 0.5) * 60;
+      const ty = -(20 + Math.random() * 80);
+      const tx2 = (Math.random() - 0.5) * 40;
+      const ty2 = -(60 + Math.random() * 120);
+      p.style.cssText = `
+        width: ${size}px; height: ${size}px;
+        background: ${color};
+        left: ${x}%; top: ${y}%;
+        --dur: ${dur}s; --delay: ${delay}s;
+        --tx: ${tx}px; --ty: ${ty}px;
+        --tx2: ${tx2}px; --ty2: ${ty2}px;
+        --op: ${0.3 + Math.random() * 0.7};
+        box-shadow: 0 0 ${size * 3}px ${color};
+        animation-delay: ${delay}s;
+      `;
+      field.appendChild(p);
+    }
+  }
+  createParticles();
+
+  /* ----------------------------------------------------------
+     NAVBAR SCROLL
+  ---------------------------------------------------------- */
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 80) {
+      navbar.classList.add('scrolled');
+    } else {
+      navbar.classList.remove('scrolled');
+    }
+  });
+
+  /* ----------------------------------------------------------
+     MOBILE NAV HAMBURGER
+  ---------------------------------------------------------- */
+  const hamburger = document.getElementById('nav-hamburger');
+  const navLinks  = document.getElementById('nav-links');
+  hamburger.addEventListener('click', () => {
+    navLinks.classList.toggle('open');
+  });
+  // Close on nav link click
+  navLinks.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => navLinks.classList.remove('open'));
+  });
+
+  /* ----------------------------------------------------------
+     SCROLL ANIMATIONS — IntersectionObserver
+  ---------------------------------------------------------- */
+  function checkScrollAnimations() {
+    // Story blocks
+    const storyBlocks = document.querySelectorAll('.story-block');
+    const charCards   = document.querySelectorAll('.char-card');
+    const statFills   = document.querySelectorAll('.stat-fill');
+    const revealEls   = document.querySelectorAll('.reveal');
+
+    const observerOpts = { threshold: 0.15 };
+
+    const storyObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) e.target.classList.add('visible');
+      });
+    }, observerOpts);
+
+    storyBlocks.forEach(b => storyObs.observe(b));
+
+    const charObs = new IntersectionObserver((entries) => {
+      entries.forEach((e, idx) => {
+        if (e.isIntersecting) {
+          setTimeout(() => e.target.classList.add('visible'), idx * 120);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    charCards.forEach(c => charObs.observe(c));
+
+    // Stat bar animations
+    const statObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('animated');
+          statObs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    statFills.forEach(s => statObs.observe(s));
+
+    // Generic reveal
+    const revealObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          revealObs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    revealEls.forEach(el => revealObs.observe(el));
+  }
+
+  // Hero parallax
+  window.addEventListener('scroll', () => {
+    const heroBgImg = document.querySelector('.hero-bg-img');
+    if (!heroBgImg) return;
+    const scrollY = window.scrollY;
+    heroBgImg.style.transform = `scale(1.05) translateY(${scrollY * 0.3}px)`;
+  });
+
+  /* ----------------------------------------------------------
+     GALLERY LIGHTBOX (simple overlay)
+  ---------------------------------------------------------- */
+  const galleryItems = document.querySelectorAll('.gallery-item');
+
+  function createLightbox() {
+    const lb = document.createElement('div');
+    lb.id = 'lightbox';
+    lb.style.cssText = `
+      position: fixed; inset: 0; z-index: 99999;
+      background: rgba(0,0,0,0.95);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; opacity: 0; transition: opacity 0.4s;
+      backdrop-filter: blur(10px);
+    `;
+    const img = document.createElement('img');
+    img.style.cssText = `
+      max-width: 90vw; max-height: 90vh;
+      object-fit: contain;
+      box-shadow: 0 0 80px rgba(139,0,0,0.4);
+      transform: scale(0.9); transition: transform 0.4s;
+    `;
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = `
+      position: absolute; top: 2rem; right: 2rem;
+      background: transparent; border: 1px solid rgba(255,255,255,0.2);
+      color: white; font-size: 1.2rem; width: 44px; height: 44px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.3s; font-family: inherit;
+    `;
+    closeBtn.onmouseenter = () => closeBtn.style.borderColor = 'rgba(139,0,0,0.8)';
+    closeBtn.onmouseleave = () => closeBtn.style.borderColor = 'rgba(255,255,255,0.2)';
+    lb.appendChild(img);
+    lb.appendChild(closeBtn);
+    document.body.appendChild(lb);
+
+    function open(src) {
+      img.src = src;
+      lb.style.display = 'flex';
+      requestAnimationFrame(() => {
+        lb.style.opacity = '1';
+        img.style.transform = 'scale(1)';
+      });
+    }
+
+    function close() {
+      lb.style.opacity = '0';
+      img.style.transform = 'scale(0.9)';
+      setTimeout(() => { lb.style.display = 'none'; }, 400);
+    }
+
+    lb.addEventListener('click', (e) => { if (e.target === lb) close(); });
+    closeBtn.addEventListener('click', close);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+
+    return { open };
+  }
+
+  const lightbox = createLightbox();
+
+  galleryItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const img = item.querySelector('img');
+      if (img) lightbox.open(img.src);
+    });
+    item.style.cursor = 'pointer';
+  });
+
+  /* ----------------------------------------------------------
+     HERO TITLE GLOW PULSE
+  ---------------------------------------------------------- */
+  let glowIntensity = 1;
+  let glowDirection = 1;
+
+  function pulseGlow() {
+    glowIntensity += 0.01 * glowDirection;
+    if (glowIntensity > 1.3) glowDirection = -1;
+    if (glowIntensity < 0.7) glowDirection = 1;
+
+    const bloodEl = document.querySelector('.hero-blood');
+    if (bloodEl) {
+      bloodEl.style.filter = `drop-shadow(0 0 ${40 * glowIntensity}px rgba(139,0,0,${0.8 * glowIntensity}))`;
+    }
+    requestAnimationFrame(pulseGlow);
+  }
+  pulseGlow();
+
+  /* ----------------------------------------------------------
+     SMOOTH SCROLL FOR NAV LINKS
+  ---------------------------------------------------------- */
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  /* ----------------------------------------------------------
+     SECTION TITLE ENTRANCE ANIMATION
+  ---------------------------------------------------------- */
+  document.querySelectorAll('.section-title, .section-label').forEach(el => {
+    el.classList.add('reveal');
+  });
+
+  // Run scroll check once DOM ready (also called after intro ends)
+  checkScrollAnimations();
+
+  /* ----------------------------------------------------------
+     HOME PAGE IMAGES SYNC
+  ---------------------------------------------------------- */
+  function applyHomeImages() {
+    if (!window.Store) return;
+    const imgs = window.Store.getHomeImages();
+    const map = {
+      'img-intro-1': imgs.intro1,
+      'img-intro-2': imgs.intro2,
+      'img-intro-3': imgs.intro3,
+      'img-hero': imgs.hero,
+      'img-story-1': imgs.story1,
+      'img-story-2': imgs.story2,
+      'img-story-3': imgs.story3,
+      'img-char-1': imgs.char1,
+      'img-char-2': imgs.char2,
+      'img-char-3': imgs.char3
+    };
+
+    for (const [id, url] of Object.entries(map)) {
+      const el = document.getElementById(id);
+      if (el && url) {
+        el.src = url;
+      }
+    }
+  }
+
+  // Apply on load
+  applyHomeImages();
+  if (typeof applyHomeGallery === 'function') applyHomeGallery();
+  if (typeof applyContactInfo === 'function') applyContactInfo();
+
+  // Listen for changes from other tabs/admin panel
+  window.addEventListener('bc_home_images_changed', applyHomeImages);
+
+})();
+
+  // ----------------------------------------------------------------
+  // GALLERY DYNAMIC LOADING
+  // ----------------------------------------------------------------
+  function applyHomeGallery() {
+    if (!window.Store) return;
+    const gallerySection = document.getElementById('gallery');
+    const galleryGrid = document.getElementById('dynamic-gallery-grid');
+    if (!gallerySection || !galleryGrid) return;
+
+    const gallery = window.Store.getHomeGallery();
+    
+    if (!gallery || gallery.length === 0) {
+      gallerySection.style.display = 'none';
+      return;
+    }
+
+    gallerySection.style.display = 'block';
+    galleryGrid.innerHTML = '';
+    
+    gallery.forEach((url, i) => {
+      const item = document.createElement('div');
+      item.classList.add('gallery-item');
+      if (i === 0 && gallery.length % 2 !== 0) {
+        // Make the first item large if odd number of items for cooler grid
+        item.classList.add('large');
+      }
+      
+      item.innerHTML = `
+        <img src="${url}" alt="Gallery Image ${i+1}" style="width: 100%; height: 100%; object-fit: cover;" />
+        <div class="gallery-overlay">
+          <span class="gallery-label">ARTWORK ${i+1}</span>
+        </div>
+      `;
+      galleryGrid.appendChild(item);
+    });
+  }
+
+  window.addEventListener('bc_home_gallery_changed', applyHomeGallery);
+
+  // ----------------------------------------------------------------
+  // CONTACT INFO DYNAMIC LOADING
+  // ----------------------------------------------------------------
+  function applyContactInfo() {
+    if (!window.Store) return;
+    const mobileEl = document.getElementById('dynamic-mobile-number');
+    if (!mobileEl) return;
+
+    const info = window.Store.getContactInfo();
+    if (info && info.mobile) {
+      mobileEl.textContent = info.mobile;
+    }
+  }
+
+  window.addEventListener('bc_contact_info_changed', applyContactInfo);
+
+css_append = """
+
+/* ==============================
+   DROP ZONE STYLES
+   ============================== */
+.drop-zone {
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--text-muted);
+  transition: all 0.3s var(--ease-blood);
+  cursor: pointer;
+  position: relative;
+  background: rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+}
+.drop-zone:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(0,0,0,0.4);
+}
+.drop-zone.drag-over {
+  border-color: var(--blood-bright);
+  background: rgba(139, 0, 0, 0.1);
+}
+.drop-zone img.preview-img {
+  max-width: 100%;
+  max-height: 100px;
+  margin-bottom: 0.5rem;
+  display: none;
+  object-fit: contain;
+}
+.drop-zone span.drop-text {
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+.drop-zone input[type='file'] {
+  display: none;
+}
+"""
+
+with open('admin.css', 'a', encoding='utf-8') as f:
+    f.write(css_append)
+print("CSS updated")
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blood Constellation — Official Manga Site</title>
+  <meta name="description" content="Blood Constellation — The epic manga saga of blood, power, and destiny. Enter the world where two warriors born of fire and lightning must face the ancient demon that threatens all existence." />
+  <meta property="og:title" content="Blood Constellation — Official Manga Site" />
+  <meta property="og:description" content="The epic manga saga of blood, power, and destiny." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===================== INTRO SPLASH ===================== -->
+  <div id="intro-splash" class="intro-splash">
+    <div class="intro-overlay"></div>
+    <div class="intro-slides">
+      <div class="intro-slide active" id="slide-1">
+        <img src="./images/kurai_hoodie.jpeg" alt="The Birth" id="img-intro-1" />
+        <div class="slide-caption">
+          <span class="slide-number">I</span>
+          <p>Born into Blood</p>
+        </div>
+      </div>
+      <div class="intro-slide" id="slide-2">
+        <img src="./images/hoodie_raiken.jpg" alt="The Demon" id="img-intro-2" />
+        <div class="slide-caption">
+          <span class="slide-number">II</span>
+          <p>The Ancient Evil Awakens</p>
+        </div>
+      </div>
+      <div class="intro-slide" id="slide-3">
+        <img src="./images/kurai_hoodie.jpeg" alt="The Warriors" id="img-intro-3" />
+        <div class="slide-caption">
+          <span class="slide-number">III</span>
+          <p>Warriors of Destiny</p>
+        </div>
+      </div>
+    </div>
+    <div class="intro-logo">
+      <div class="intro-logo-inner">
+        <div class="blood-drip-container" id="blood-drips"></div>
+        <h1 class="intro-title">
+  <span class="war-text">Blood</span>
+  <span class="of-text">Constellation</span>
+</h1>
+        <div class="intro-tagline">The eternal war has begun</div>
+      </div>
+    </div>
+    <button id="skip-intro" class="skip-btn">ENTER THE WORLD <span>→</span></button>
+    <div class="intro-progress">
+      <div class="intro-progress-bar" id="intro-progress-bar"></div>
+    </div>
+  </div>
+
+  <!-- ===================== MAIN SITE ===================== -->
+  <div id="main-site" class="main-site hidden">
+
+    <!-- NAV -->
+    <nav class="navbar" id="navbar">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <a href="#home" id="nav-logo-link">
+            <span class="nav-logo-war">Blood</span>
+            <span class="nav-logo-of">Constellation</span>
+          </a>
+        </div>
+        <button class="nav-hamburger" id="nav-hamburger" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="#home" class="nav-link" id="nav-home">HOME</a></li>
+          <li><a href="#story" class="nav-link" id="nav-story">STORY</a></li>
+          <li><a href="#characters" class="nav-link" id="nav-characters">CHARACTERS</a></li>
+          <li><a href="#gallery" class="nav-link" id="nav-gallery">GALLERY</a></li>
+          <li><a href="#news" class="nav-link" id="nav-news">NEWS</a></li>
+          <li><a href="shop.html" class="nav-link" id="nav-shop">SHOP</a></li>
+          <li><a href="#contact" class="nav-link nav-link-cta" id="nav-read">READ NOW</a></li>
+        </ul>
+        <a href="shop.html" class="nav-cart-btn" id="nav-cart-icon" aria-label="Shopping Cart">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <span class="cart-badge" id="nav-cart-badge" style="display:none">0</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero" id="home">
+      <div class="hero-bg">
+        <div class="hero-particle-field" id="particle-field"></div>
+        <div class="hero-image-bg">
+          <img src="./images/kurai_hoodie.jpeg" alt="War of Blood heroes" class="hero-bg-img" id="img-hero" />
+        </div>
+        <div class="hero-gradient-overlay"></div>
+      </div>
+      <div class="hero-content">
+        <div class="hero-eyebrow">OFFICIAL MANGA SERIES</div>
+        <h1 class="hero-title">
+          <span class="hero-war">Blood</span>
+<span class="hero-of">Constellation</span>
+        </h1>
+        <p class="hero-subtitle">The Thunder Dog. The Infinity Group. An ancient destiny written in the stars.</p>
+        <div class="hero-cta-group">
+          <a href="#story" class="btn-primary" id="hero-explore-btn">EXPLORE THE SAGA</a>
+          <a href="shop.html" class="btn-secondary" id="hero-shop-btn">🛒 BUY THE MANGA</a>
+        </div>
+        <div class="hero-scroll-hint">
+          <div class="scroll-line"></div>
+          <span>SCROLL</span>
+        </div>
+      </div>
+      <div class="hero-side-text">Blood Constellation · 2024 · MANGA SERIES</div>
+    </section>
+
+    <!-- MARQUEE STRIP -->
+        <div class="marquee-strip">
+      <div class="marquee-track">
+        <span>Blood Constellation</span><span class="dot">✦</span>
+        <span>THE RING BEARER</span><span class="dot">✦</span>
+        <span>THE ANCIENT DEMON</span><span class="dot">✦</span>
+        <span>THE DRAGON RING</span><span class="dot">✦</span>
+        <span>THE INFINITY GROUP</span><span class="dot">✦</span>
+        <span>Blood Constellation</span><span class="dot">✦</span>
+        <span>THE RING BEARER</span><span class="dot">✦</span>
+        <span>THE ANCIENT DEMON</span><span class="dot">✦</span>
+        <span>THE DRAGON RING</span><span class="dot">✦</span>
+        <span>THE INFINITY GROUP</span><span class="dot">✦</span>
+      </div>
+    </div>
+
+    <!-- STORY SECTION -->
+    <section class="story-section" id="story">
+      <div class="section-container">
+        <div class="section-label">THE SAGA</div>
+        <h2 class="section-title">A War Written<br /><span class="highlight">in Blood</span></h2>
+
+                <div class="story-blocks">
+          <div class="story-block" id="story-block-1">
+            <div class="story-image-wrap">
+              <img src="./images/kurai_hoodie.jpeg" alt="The Five Constellations" class="story-img" id="img-story-1" />
+              <div class="story-image-overlay"></div>
+              <div class="story-image-number">01</div>
+            </div>
+            <div class="story-text">
+              <div class="story-chapter">CHAPTER ONE</div>
+              <h3 class="story-heading">The Five Constellations</h3>
+              <p class="story-body">
+                Raiken, known as the 'Thunder Dog', inherits the power of the Leo Constellation. Guided by his mentor Nakoi and fighting for a future with Li Mei, he discovers ancient powers hidden in his bloodline.
+              </p>
+              <div class="story-quote">"A constellation is a power that flows through your blood."</div>
+            </div>
+          </div>
+
+          <div class="story-block reverse" id="story-block-2">
+            <div class="story-image-wrap">
+              <img src="./images/hoodie_raiken.jpg" alt="The Dragon Ring" class="story-img" id="img-story-2" />
+              <div class="story-image-overlay"></div>
+              <div class="story-image-number">02</div>
+            </div>
+            <div class="story-text">
+              <div class="story-chapter">THE DRAGON TEMPLE</div>
+              <h3 class="story-heading">The Trial of Blood</h3>
+              <p class="story-body">
+                Within the treacherous ruins of the Dragon Temple, Raiken faces his ultimate trial against his own parents, the guardians of the Dragon Ring. Upon taking the ring, he awakens the golden power of the ancient dragons.
+              </p>
+              <div class="story-quote">"The moment you take the ring... our duty ends."</div>
+            </div>
+          </div>
+
+          <div class="story-block" id="story-block-3">
+            <div class="story-image-wrap">
+              <img src="./images/kurai_hoodie.jpeg" alt="The Demon\'s Order" class="story-img" id="img-story-3" />
+              <div class="story-image-overlay"></div>
+              <div class="story-image-number">03</div>
+            </div>
+            <div class="story-text">
+              <div class="story-chapter">THE ALLIANCE</div>
+              <h3 class="story-heading">The First Great Village War</h3>
+              <p class="story-body">
+                The Infinity Group, led by the ruthless Kurai, seeks to unseal Kathorse, locked away sixty years ago by the Five Rings. As Kurai shatters the Dragon Ring from Raiken's hand, the final war begins.
+              </p>
+              <div class="story-quote">"The age of conquest begins."</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHARACTERS SECTION -->
+    <section class="characters-section" id="characters">
+      <div class="char-bg-overlay"></div>
+      <div class="section-container">
+        <div class="section-label">THE WARRIORS</div>
+        <h2 class="section-title">Meet the <span class="highlight">Champions</span></h2>
+                <div class="characters-grid">
+
+          <div class="char-card" id="char-ryu">
+            <div class="char-image-wrap">
+              <img src="./images/raiken_lightning.jpg" alt="Raiken — The Thunder Dog" class="char-img" id="img-char-1" />
+              <div class="char-img-fade"></div>
+              <div class="char-power-badge lightning">⚡ LIGHTNING</div>
+            </div>
+            <div class="char-info">
+              <div class="char-role">PROTAGONIST</div>
+              <h3 class="char-name">RAIKEN</h3>
+              <p class="char-desc">Known as the 'Thunder Dog', Raiken inherited the Leo Constellation and later awakened the power of the Dragon Ring. Guided by his mentor Nakoi and fighting for his future with Li Mei, he refuses to fall no matter the odds.</p>
+              <div class="char-stats">
+                <div class="stat"><span class="stat-label">POWER</span><div class="stat-bar"><div class="stat-fill" style="--fill: 95%"></div></div></div>
+                <div class="stat"><span class="stat-label">SPEED</span><div class="stat-bar"><div class="stat-fill" style="--fill: 88%"></div></div></div>
+                <div class="stat"><span class="stat-label">RESOLVE</span><div class="stat-bar"><div class="stat-fill" style="--fill: 100%"></div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="char-card featured" id="char-karathos">
+            <div class="char-image-wrap">
+              <img src="./images/hoodie_raiken.jpg" alt="Kathorse" class="char-img" id="img-char-2" />
+              <div class="char-img-fade"></div>
+              <div class="char-power-badge demon">🔥 ANCIENT</div>
+            </div>
+            <div class="char-info">
+              <div class="char-role">THE ANTAGONIST</div>
+              <h3 class="char-name">KATHORSE</h3>
+              <p class="char-desc">An ancient demon sealed within the Infinity Cave by the power of the Five Rings. With crimson eyes and terrifying power, it waits for the Infinity Group to gather the rings and unleash its age of conquest upon the world.</p>
+              <div class="char-stats">
+                <div class="stat"><span class="stat-label">POWER</span><div class="stat-bar"><div class="stat-fill demon-fill" style="--fill: 100%"></div></div></div>
+                <div class="stat"><span class="stat-label">ENDURANCE</span><div class="stat-bar"><div class="stat-fill demon-fill" style="--fill: 100%"></div></div></div>
+                <div class="stat"><span class="stat-label">MALICE</span><div class="stat-bar"><div class="stat-fill demon-fill" style="--fill: 100%"></div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="char-card" id="char-kael">
+            <div class="char-image-wrap">
+              <img src="./images/kurai_blue.png" alt="Kurai" class="char-img" id="img-char-3" style="object-position: right;" />
+              <div class="char-img-fade"></div>
+              <div class="char-power-badge fire">🌑 SHADOW</div>
+            </div>
+            <div class="char-info">
+              <div class="char-role">THE VILLAIN</div>
+              <h3 class="char-name">KURAI</h3>
+              <p class="char-desc">A cold and confident killer wielding dark energy and the terrifying 'Hell Chain: Eternal Punishment'. Leader of the Infinity Group's forces, he will stop at nothing to retrieve the Five Rings and free his lord.</p>
+              <div class="char-stats">
+                <div class="stat"><span class="stat-label">POWER</span><div class="stat-bar"><div class="stat-fill fire-fill" style="--fill: 92%"></div></div></div>
+                <div class="stat"><span class="stat-label">SPEED</span><div class="stat-bar"><div class="stat-fill fire-fill" style="--fill: 95%"></div></div></div>
+                <div class="stat"><span class="stat-label">CRUELTY</span><div class="stat-bar"><div class="stat-fill fire-fill" style="--fill: 100%"></div></div></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+
+
+    <!-- NEWS SECTION -->
+    <section class="news-section" id="news">
+      <div class="section-container">
+        <div class="section-label">LATEST</div>
+        <h2 class="section-title">News & <span class="highlight">Updates</span></h2>
+        <div class="news-grid">
+          <article class="news-card featured-news" id="news-1">
+            <div class="news-tag">ANNOUNCEMENT</div>
+            <div class="news-date">MAY 30, 2026</div>
+            <h3 class="news-title">Blood Constellation — Official Launch</h3>
+            <p class="news-excerpt">The saga officially begins. War of Blood launches its first volume, plunging readers into a world of ancient demons, destined warriors, and battles that shake the heavens.</p>
+            <a href="#" class="news-link" id="news-link-1">READ MORE →</a>
+          </article>
+          <article class="news-card" id="news-2">
+            <div class="news-tag">STORY</div>
+            <div class="news-date">MAY 15, 2026</div>
+            <h3 class="news-title">Chapter 1: The Thunder Dog</h3>
+            <p class="news-excerpt">The first chapter reveals the tragic past of Raiken, the Thunder Dog, and the ancient constellations that run through his blood.</p>
+            <a href="#" class="news-link" id="news-link-2">READ MORE →</a>
+          </article>
+          <article class="news-card" id="news-3">
+            <div class="news-tag">LORE</div>
+            <div class="news-date">MAY 01, 2026</div>
+            <h3 class="news-title">The Mythology Behind the War</h3>
+            <p class="news-excerpt">Dive into the world-building behind War of Blood — the ancient pacts, the celestial chains, and the bloodline that carries the weight of all humanity.</p>
+            <a href="#" class="news-link" id="news-link-3">READ MORE →</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- FULL-WIDTH BANNER CTA -->
+    <section class="banner-cta" id="contact">
+      <div class="banner-bg">
+        <img src="./images/hoodie_raiken.jpg" alt="background" class="banner-bg-img" />
+        <div class="banner-gradient"></div>
+      </div>
+      <div class="banner-content">
+        <div class="banner-eyebrow">THE WAR AWAITS</div>
+        <h2 class="banner-title">Are you ready to<br /><span class="highlight">Enter the Blood War?</span></h2>
+        <p class="banner-subtitle">Follow the saga. Join the community. Witness the battle that will define an era.</p>
+        <div class="banner-cta-group">
+          <a href="shop.html" class="btn-primary" id="banner-shop-btn">🛒 SHOP NOW</a>
+          <a href="#" class="btn-outline" id="banner-follow-btn">FOLLOW US</a>
+        </div>
+        <div class="social-links">
+          <a href="#" class="social-link" id="social-twitter" aria-label="Twitter">𝕏</a>
+          <a href="#" class="social-link" id="social-instagram" aria-label="Instagram">▣</a>
+          <a href="#" class="social-link" id="social-youtube" aria-label="YouTube">▶</a>
+          <a href="#" class="social-link" id="social-discord" aria-label="Discord">⌘</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="footer-container">
+        <div class="footer-logo">
+          <span class="nav-logo-war">Blood</span>
+          <span class="nav-logo-of">Constellation</span>
+        </div>
+        <p class="footer-tagline">The eternal war has begun.</p>
+        <ul class="footer-links">
+          <li><a href="#story" id="footer-story">Story</a></li>
+          <li><a href="#characters" id="footer-chars">Characters</a></li>
+          <li><a href="#gallery" id="footer-gallery">Gallery</a></li>
+          <li><a href="#news" id="footer-news">News</a></li>
+          <li><a href="shop.html" id="footer-shop">Shop</a></li>
+          <li><a href="#contact" id="footer-contact">Contact</a></li>
+        </ul>
+        <div class="footer-contact-info" style="margin: 1.5rem 0; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+          <span style="display: inline-flex; align-items: center; gap: 0.5rem;">
+            📞 <span id="dynamic-mobile-number">+1 (555) 019-2834</span>
+          </span>
+        </div>
+        <div class="footer-divider"></div>
+        <p class="footer-copy">© 2026 Blood Constellation. All rights reserved. All artwork and characters are original intellectual property.</p>
+      </div>
+    </footer>
+
+  </div><!-- end main-site -->
+
+  <script src="store.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
